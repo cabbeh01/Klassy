@@ -1,17 +1,24 @@
 {
-  "name": "klassy",
-  "version": "0.0.0",
-  "private": true,
+  "name": "Klassy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node ./bin/www"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cabbeh01/Klassy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cabbeh01/Klassy/issues"
+  },
+  "homepage": "https://github.com/cabbeh01/Klassy#readme",
   "dependencies": {
-    "cookie-parser": "~1.4.4",
-    "debug": "~2.6.9",
-    "express": "~4.16.1",
-    "hbs": "~4.0.4",
-    "http-errors": "~1.6.3",
-    "morgan": "~1.9.1",
-    "node-sass-middleware": "0.11.0"
+    "express": "^4.17.1",
+    "handlebars": "^4.7.2"
   }
 }
