@@ -1,24 +1,17 @@
 {
-  "name": "Klassy",
+  "name": "Klassrumshanteraren",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cabbeh01/Klassy.git"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/cabbeh01/Klassy/issues"
-  },
-  "homepage": "https://github.com/cabbeh01/Klassy#readme",
   "dependencies": {
     "express": "^4.17.1",
+    "express-handlebars": "^3.1.0",
     "handlebars": "^4.7.2"
   }
 }
