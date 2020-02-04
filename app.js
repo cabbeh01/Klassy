@@ -12,19 +12,22 @@ app.engine( 'hbs', hbs( {
     partialsDir: __dirname + '/views/partials/'
 }));
 
+app.use("/public",express.static("public"));
+app.use(express.urlencoded({extended:false}));
+
 //Main page
 app.get("/",function(req,res){
-    res.render('index');
+    res.render('index',{title:"Home"});
 });
 
 
 //Login
 app.get("/login",function(req,res){
-    res.send("Login");
+    res.render('login',{title:"Inlogging"});
 });
 
 app.post("/login",function(req,res){
-    res.send("Post login");
+    res.send(req.body);
 });
 
 
