@@ -33,11 +33,11 @@ app.post("/login",function(req,res){
 
 //Register
 app.get("/register",function(req,res){
-    res.send("/Register");
+    res.render('register',{title:"Registrering"});
 });
 
 app.post("/register",function(req,res){
-    res.send("/");
+    res.send(req.body.group);
 });
 
 

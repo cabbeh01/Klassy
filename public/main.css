@@ -1,24 +1,56 @@
 html,body{
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    
     display: block;
 }
-
-
 
 body{
     margin:0px;
     background-color: #5D5E56;
 }
 
-#mid{
-    width: 100%;
-    height: 80vw;
+#mid,#mid form, #mid input, input[type="radio"]{
     margin-left: auto;
     margin-right: auto;
+}
+
+#mid{
+    text-align: center;
+    width: 60vw;
+    height: 80vw;
     background-color: white;
     color: #E16767;
 }
+#mid h1{
+    padding-top: 5vw;
+}
+#mid form{
+    width: 40vw;
+}
+#mid input[type="radio"]{
+    width: 30px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 7px;
+}
+#mid p{
+    padding-right: 10px;
+    margin:0px;
+}
+#mid input{
+    width: 100%;
+    max-width: 500px;
+}
+
+#mid a{
+    text-align: right;
+}
+
+.radiogroup{
+    display: flex;
+    justify-content:center;
+}
+
+
 
 header h1{
     position: relative;
