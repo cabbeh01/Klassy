@@ -1,7 +1,11 @@
 const express = require("express");
-const hbs = require("express-handlebars");
-
 const app = express();
+
+const hbs = require("express-handlebars");
+const mongo = require("mongodb").MongoClient;
+
+const conString = require("./private");
+//console.log(conString);
 
 app.set("view engine","hbs");
 
@@ -13,45 +17,18 @@ app.engine( 'hbs', hbs( {
 }));
 
 app.use("/public",express.static("public"));
+app.use("/router",express.static("router"));
 app.use(express.urlencoded({extended:false}));
 
-//Main page
-app.get("/",function(req,res){
-    res.render('index',{title:"Home"});
-});
+makeConnection();
+async function makeConnection(){
+    const con = await mongo.connect(conString, {useNewUrlParser: true, useUnifiedTopology: true});
+    const db = await con.db('dbKlassy');
 
+    app.users = await db.collection('users');
 
-//Login
-app.get("/login",function(req,res){
-    res.render('login',{title:"Inlogging"});
-});
-
-app.post("/login",function(req,res){
-    res.send(req.body);
-});
-
-
-//Register
-app.get("/register",function(req,res){
-    res.render('register',{title:"Registrering"});
-});
-
-app.post("/register",function(req,res){
-    res.send(req.body.group);
-});
-
-
-//Session
-app.get("/session",function(req,res){
-    res.send("/");
-});
-
-
-
-
-
-
-
+    require('./router/routes')(app);
+}
 
 app.listen(2380, function(){
     console.log("http://localhost:2380");
