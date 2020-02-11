@@ -16,7 +16,12 @@ module.exports = async function(app){
     });
 
     app.post("/login",function(req,res){
-        es.send(req.body);
+        res.send(req.body);
+
+        let email = req.body.email;
+        let pass = req.body.pass;
+
+        
     });
 
 
@@ -26,11 +31,27 @@ module.exports = async function(app){
     });
 
     app.post("/register",async function(req,res){
+        bcrypt.hash(req.body.password,12,function(err,hash){
+            let inEmail = req.body.email;
+            
+            app.users.findOne({"email": inEmail},function(err,data){
+                
+                if(data == null){
+                    req.body.password = hash;
 
-        app.users.insertOne(req.body,function(err){
-            console.log(err);
+                    app.users.insertOne(req.body,function(err){
+                        console.log(err);
+                    });
+                    res.redirect("/login");
+                }
+                else{
+                    res.render('register',{title:"Registrering", errmess:"Går inte registrera användaren"});
+                }
+                
+            });
+
         });
-        res.send(req.body.group);
+        //res.send(req.body.group);
     });
 
 

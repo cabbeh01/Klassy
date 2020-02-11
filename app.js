@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const createError = require("http-errors");
 
 const hbs = require("express-handlebars");
 const mongo = require("mongodb").MongoClient;
@@ -19,6 +20,18 @@ app.engine( 'hbs', hbs( {
 app.use("/public",express.static("public"));
 app.use("/router",express.static("router"));
 app.use(express.urlencoded({extended:false}));
+
+/*app.use(function(req,res, next){
+    next(createError(404));
+});
+
+// error handler
+app.use(function (err, req, res, next) {
+
+    // render the error page
+    res.status(err.status || 500);
+    res.render('error');
+});*/
 
 makeConnection();
 async function makeConnection(){
