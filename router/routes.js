@@ -16,12 +16,36 @@ module.exports = async function(app){
     });
 
     app.post("/login",function(req,res){
-        res.send(req.body);
 
-        let email = req.body.email;
-        let pass = req.body.pass;
+        let inEmail = req.body.email;
+        let pass = req.body.password;
 
-        
+        app.users.findOne({"email": inEmail},function(err,data){
+
+            if(!(data == null)){
+                //console.log(data.password);
+                //console.log(pass);
+                bcrypt.compare(pass,data.password,function(err,succ){
+                    if(succ){
+                        switch(data.group){
+                            case "0":
+                                res.redirect("/teacher");
+                                break;
+                            case "1":
+                                res.redirect("/pupil");
+                                break;
+                        }
+                    }
+                    if(err){
+                        res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+                    }
+                
+                });
+            }
+            else{
+                res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+            }
+        });
     });
 
 
@@ -52,6 +76,16 @@ module.exports = async function(app){
 
         });
         //res.send(req.body.group);
+    });
+
+    //Lärare
+    app.get("/teacher",function(req,res){
+        res.render('teacher',{title:"Lärare inloggad"});
+    });
+
+    //Elev
+    app.get("/pupil",function(req,res){
+        res.render('pupil',{title:"Elev inloggad"});
     });
 
 
