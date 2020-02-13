@@ -3,36 +3,35 @@ const jwt = require('jsonwebtoken');
 //const secret = require('./secret');
 const bcrypt = require('bcryptjs');
 
-const auth = require("");
-
-
 module.exports = async function(app){
     //Main page
     app.get("/",function(req,res){
         res.render('index',{title:"Home"});
     });
 
-
     //Login
-    app.get("/login",auth,function(req,res){
+    app.get("/login",function(req,res){
         res.render('login',{title:"Inlogging"});
     });
 
-    app.post("/login", function(req,res){
+    app.post("/login", async function(req,res){
 
         let inEmail = req.body.email;
         let pass = req.body.password;
 
-        app.users.findOne({"email": inEmail},function(err,data){
+        await app.users.findOne({"email": inEmail},function(err,data){
 
             if(!(data == null)){
                 //console.log(data.password);
                 //console.log(pass);
                 bcrypt.compare(pass,data.password,function(err,succ){
+
+                    console.log(err);
+                    console.log(succ);
                     if(succ){
 
                         const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
-                        res.cookie("token",token,{httpOnly:true});
+                        res.cookie("token",token,{httpOnly:true,sameSite: 'strict'});
 
                         switch(data.group){
                             case "0":
@@ -43,10 +42,9 @@ module.exports = async function(app){
                                 break;
                         }
                     }
-                    if(err){
+                    else{
                         res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
                     }
-                
                 });
             }
             else{
@@ -57,7 +55,7 @@ module.exports = async function(app){
 
 
     //Register
-    app.get("/register",auth,function(req,res){
+    app.get("/register",function(req,res){
         res.render('register',{title:"Registrering"});
     });
 
@@ -86,7 +84,7 @@ module.exports = async function(app){
     });
 
     //Lärare
-    app.get("/teacher",function(req,res){
+    app.get("/teacher",auth,function(req,res){
         res.render('teacher',{title:"Lärare inloggad"});
 
         
@@ -94,7 +92,7 @@ module.exports = async function(app){
     });
 
     //Elev
-    app.get("/pupil",function(req,res){
+    app.get("/pupil",auth,function(req,res){
         res.render('pupil',{title:"Elev inloggad"});
     });
 
@@ -103,4 +101,37 @@ module.exports = async function(app){
     app.get("/session",function(req,res){
         res.send("/");
     });
+
+
+    function auth(req,res,next){
+        
+        let token = req.cookies.token;
+
+        if(!(token === undefined)){
+            jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
+                if(decoded !== undefined){
+                    await app.users.findOne({"email": decoded.email},function(err,data){
+                    
+                        if(!(data == null)){
+                            console.log(data);
+                            if(data.password == decoded.password){
+                                next();
+                            }
+                            else{
+                            res.redirect("/login");
+                            }
+                        }
+                        else{
+                        res.redirect("/login");
+                        }
+                        
+                    });
+                }
+            });
+        }
+        else{
+            res.redirect("/login");
+        }
+        
+    }
 }
