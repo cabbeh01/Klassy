@@ -1,7 +1,10 @@
 //let objectId = require('mongodb').ObjectID;
 const jwt = require('jsonwebtoken');
 //const secret = require('./secret');
-var bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
+
+const auth = require("");
+
 
 module.exports = async function(app){
     //Main page
@@ -11,11 +14,11 @@ module.exports = async function(app){
 
 
     //Login
-    app.get("/login",function(req,res){
+    app.get("/login",auth,function(req,res){
         res.render('login',{title:"Inlogging"});
     });
 
-    app.post("/login",function(req,res){
+    app.post("/login", function(req,res){
 
         let inEmail = req.body.email;
         let pass = req.body.password;
@@ -27,6 +30,10 @@ module.exports = async function(app){
                 //console.log(pass);
                 bcrypt.compare(pass,data.password,function(err,succ){
                     if(succ){
+
+                        const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
+                        res.cookie("token",token,{httpOnly:true});
+
                         switch(data.group){
                             case "0":
                                 res.redirect("/teacher");
@@ -50,7 +57,7 @@ module.exports = async function(app){
 
 
     //Register
-    app.get("/register",function(req,res){
+    app.get("/register",auth,function(req,res){
         res.render('register',{title:"Registrering"});
     });
 
@@ -81,6 +88,9 @@ module.exports = async function(app){
     //Lärare
     app.get("/teacher",function(req,res){
         res.render('teacher',{title:"Lärare inloggad"});
+
+        
+
     });
 
     //Elev

@@ -1,11 +1,12 @@
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
+const cookieParser = require('cookie-parser');
 const createError = require("http-errors");
 
 const hbs = require("express-handlebars");
 const mongo = require("mongodb").MongoClient;
-
-const conString = require("./private");
 //console.log(conString);
 
 app.set("view engine","hbs");
@@ -19,6 +20,7 @@ app.engine( 'hbs', hbs( {
 
 app.use("/public",express.static("public"));
 app.use("/router",express.static("router"));
+app.use(cookieParser());
 app.use(express.urlencoded({extended:false}));
 
 /*app.use(function(req,res, next){
@@ -35,7 +37,7 @@ app.use(function (err, req, res, next) {
 
 makeConnection();
 async function makeConnection(){
-    const con = await mongo.connect(conString, {useNewUrlParser: true, useUnifiedTopology: true});
+    const con = await mongo.connect(process.env.CONNECT_STRING, {useNewUrlParser: true, useUnifiedTopology: true});
     const db = await con.db('dbKlassy');
 
     app.users = await db.collection('users');
