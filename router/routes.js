@@ -5,13 +5,27 @@ const bcrypt = require('bcryptjs');
 
 module.exports = async function(app){
     //Main page
-    app.get("/",function(req,res){
-        res.render('index',{title:"Home"});
+    app.get("/",auth, function(req,res){
+        if(app.currentGroup == "1" || app.currentGroup == "0"){
+            res.render('index',{title:"Home",layout:"loggedin"});
+        }
+        else{
+            res.render('index',{title:"Home"});
+        }
+        
     });
 
     //Login
     app.get("/login",function(req,res){
-        res.render('login',{title:"Inlogging"});
+        if(app.currentGroup == "0"){
+            res.redirect("/teacher");
+        }
+        else if(app.currentGroup == "1"){
+            res.redirect("/pupil");
+        }
+        else{
+            res.render('login',{title:"Inlogging"});
+        }
     });
 
     app.post("/login", async function(req,res){
@@ -56,7 +70,15 @@ module.exports = async function(app){
 
     //Register
     app.get("/register",function(req,res){
-        res.render('register',{title:"Registrering"});
+        if(app.currentGroup == "0"){
+            res.redirect("/teacher");
+        }
+        else if(app.currentGroup == "1"){
+            res.redirect("/pupil");
+        }
+        else{
+            res.render('register',{title:"Registrering"});
+        }
     });
 
     app.post("/register",async function(req,res){
@@ -85,15 +107,28 @@ module.exports = async function(app){
 
     //Lärare
     app.get("/teacher",auth,function(req,res){
-        res.render('teacher',{title:"Lärare inloggad"});
-
-        
-
+        if(app.currentGroup == "0"){
+            res.render('teacher',{title:"Lärare inloggad",layout:"loggedin"});
+        }
+        else if(app.currentGroup == "1"){
+            res.redirect("/pupil");
+        }
+        else{
+            res.redirect("/login");
+        }
     });
 
     //Elev
     app.get("/pupil",auth,function(req,res){
-        res.render('pupil',{title:"Elev inloggad"});
+        if(app.currentGroup == "1"){
+            res.render('pupil',{title:"Elev inloggad",layout:"loggedin"});
+        }
+        else if(app.currentGroup == "0"){
+            res.redirect("/teacher");
+        }
+        else{
+            res.redirect("/login");
+        }
     });
 
 
@@ -103,6 +138,13 @@ module.exports = async function(app){
     });
 
 
+    //Logout
+    app.get("/logout",function(req,res){
+        app.currentGroup = undefined;
+        res.clearCookie("token");
+        res.redirect("/");
+    });
+
     function auth(req,res,next){
         
         let token = req.cookies.token;
@@ -111,18 +153,17 @@ module.exports = async function(app){
             jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
                 if(decoded !== undefined){
                     await app.users.findOne({"email": decoded.email},function(err,data){
-                    
+                        
                         if(!(data == null)){
-                            console.log(data);
+                            //console.log(data.group);
                             if(data.password == decoded.password){
+                                app.currentGroup = data.group;
                                 next();
                             }
                             else{
-                            res.redirect("/login");
+                                app.currentGroup = undefined;
+                                next();
                             }
-                        }
-                        else{
-                        res.redirect("/login");
                         }
                         
                     });
@@ -130,7 +171,9 @@ module.exports = async function(app){
             });
         }
         else{
-            res.redirect("/login");
+            res.clearCookie("token");
+            app.currentGroup = undefined;
+            next();
         }
         
     }
