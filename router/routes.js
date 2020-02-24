@@ -16,16 +16,8 @@ module.exports = async function(app){
     });
 
     //Login
-    app.get("/login",function(req,res){
-        if(app.currentGroup == "0"){
-            res.redirect("/teacher");
-        }
-        else if(app.currentGroup == "1"){
-            res.redirect("/pupil");
-        }
-        else{
-            res.render('login',{title:"Inlogging"});
-        }
+    app.get("/login",loggedinRedirector,function(req,res){
+        res.render('login',{title:"Inlogging"});
     });
 
     app.post("/login", async function(req,res){
@@ -69,16 +61,8 @@ module.exports = async function(app){
 
 
     //Register
-    app.get("/register",function(req,res){
-        if(app.currentGroup == "0"){
-            res.redirect("/teacher");
-        }
-        else if(app.currentGroup == "1"){
-            res.redirect("/pupil");
-        }
-        else{
-            res.render('register',{title:"Registrering"});
-        }
+    app.get("/register",loggedinRedirector,function(req,res){
+        res.render('register',{title:"Registrering"});
     });
 
     app.post("/register",async function(req,res){
@@ -176,5 +160,17 @@ module.exports = async function(app){
             next();
         }
         
+    }
+
+    function loggedinRedirector(req,res,next){
+        if(app.currentGroup == "0"){
+            res.redirect("/teacher");
+        }
+        else if(app.currentGroup == "1"){
+            res.redirect("/pupil");
+        }
+        else{
+            next();
+        }
     }
 }

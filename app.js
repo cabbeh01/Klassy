@@ -20,6 +20,7 @@ app.engine( 'hbs', hbs( {
 
 app.use("/public",express.static("public"));
 app.use("/router",express.static("router"));
+app.use("/resources",express.static("resources"));
 app.use(cookieParser());
 app.use(express.urlencoded({extended:false}));
 

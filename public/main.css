@@ -50,19 +50,45 @@ body{
     justify-content:center;
 }
 
-
-
-header h1{
+#navigation{
     position: relative;
     background-color:#303030;
     color: #E1CC67;
     display: block;
+}
+
+#navigation h1{
+    display: inline-block;
     border: 0px;
     margin:0px;
     padding:20px;
     padding-left: 60px;
     font-size: 80px;
     font-family: "Tw Cen MT";
+}
+#navigation a{
+    font-size: 16px;
+    text-align: right;
+    text-decoration:none;
+    color: #E1CC67;
+}
+
+#navigation a:hover{
+    color: rgb(192, 174, 82);
+}
+#user{
+    display: inline-block;
+}
+#user h1{
+    font-size: 30px;
+    padding:0px;
+}
+#user img{
+    width:100px;
+    border-radius: 100%;
+}
+#user h2{
+    font-size: 15px;
 }
 
 input{
