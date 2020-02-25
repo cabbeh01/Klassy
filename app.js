@@ -4,7 +4,9 @@ const express = require("express");
 const app = express();
 const cookieParser = require('cookie-parser');
 const createError = require("http-errors");
+const http = require('http').createServer(app);
 
+const io = require("socket.io")(http);
 const hbs = require("express-handlebars");
 const mongo = require("mongodb").MongoClient;
 //console.log(conString);
@@ -18,13 +20,15 @@ app.engine( 'hbs', hbs( {
     partialsDir: __dirname + '/views/partials/'
 }));
 
+
 app.use("/public",express.static("public"));
 app.use("/router",express.static("router"));
 app.use("/resources",express.static("resources"));
 app.use(cookieParser());
 app.use(express.urlencoded({extended:false}));
 
-/*app.use(function(req,res, next){
+/*
+app.use(function(req,res, next){
     next(createError(404));
 });
 
@@ -42,9 +46,14 @@ async function makeConnection(){
     const db = await con.db('dbKlassy');
 
     app.users = await db.collection('users');
-    require('./router/routes')(app);
+
+    require('./router/routes')(app,io);
 }
 
-app.listen(2380, function(){
+io.on('connection', function(socket){
+    console.log('a user connected');
+});
+  
+http.listen(2380, function(){
     console.log("http://localhost:2380");
 });

@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 //const secret = require('./secret');
 const bcrypt = require('bcryptjs');
 
-module.exports = async function(app){
+module.exports = async function(app,io){
     //Main page
     app.get("/",auth, function(req,res){
         if(app.currentGroup == "1" || app.currentGroup == "0"){
@@ -75,7 +75,7 @@ module.exports = async function(app){
                     req.body.password = hash;
 
                     app.users.insertOne(req.body,function(err){
-                        console.log(err);
+                        //console.log(err);
                     });
                     res.redirect("/login");
                 }
@@ -89,10 +89,23 @@ module.exports = async function(app){
         //res.send(req.body.group);
     });
 
+
+    //Sessions
+    app.get("/session/:id",async function(req,res){
+        res.render("session",{title:"Lärare inloggad",io:"<script>var socket = io()</script>"})
+    });
+
+    app.post("/session",async function(req,res){
+        res.redirect("/session/" + req.body.code);
+    });
+
+
+
+
     //Lärare
     app.get("/teacher",auth,function(req,res){
         if(app.currentGroup == "0"){
-            res.render('teacher',{title:"Lärare inloggad",layout:"loggedin"});
+            res.render("teacher",{title:"Lärare inloggad",layout:"loggedin"});
         }
         else if(app.currentGroup == "1"){
             res.redirect("/pupil");
