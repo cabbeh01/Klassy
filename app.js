@@ -50,9 +50,9 @@ async function makeConnection(){
     require('./router/routes')(app,io);
 }
 
-io.on('connection', function(socket){
+/*io.on('connection', function(socket){
     console.log('a user connected');
-});
+});*/
   
 http.listen(2380, function(){
     console.log("http://localhost:2380");

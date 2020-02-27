@@ -2,8 +2,11 @@
 const jwt = require('jsonwebtoken');
 //const secret = require('./secret');
 const bcrypt = require('bcryptjs');
+const codeGen = require("../codegenerator.js");
 
 module.exports = async function(app,io){
+    
+    
     //Main page
     app.get("/",auth, function(req,res){
         if(app.currentGroup == "1" || app.currentGroup == "0"){
@@ -89,18 +92,39 @@ module.exports = async function(app,io){
         //res.send(req.body.group);
     });
 
-
+    
     //Sessions
+    app.get("/session",function(req,res){
+        res.send("/");
+    });
+
+    //Pupil or guest connecting to a session
     app.get("/session/:id",async function(req,res){
-        res.render("session",{title:"Lärare inloggad",io:"<script>var socket = io()</script>"})
+        res.render("session",{title:"Elev inloggad | "+ req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>"})
     });
 
     app.post("/session",async function(req,res){
+        
+        
+
         res.redirect("/session/" + req.body.code);
     });
 
+    //Teacher starting a session
+    app.get("/lesson/:id", function(req,res){
+        const c = req.params.id;
+        const nsp = io.of('/' + c);
+        
+        nsp.on('connection', function(socket){
+            console.log('someone connected on code: ' + c);
+        });
 
-
+        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin"})
+    });
+    app.post("/startlesson", function(req,res){
+        const code = codeGen(6);
+        res.redirect("/lesson/" + code);
+    });
 
     //Lärare
     app.get("/teacher",auth,function(req,res){
@@ -129,11 +153,7 @@ module.exports = async function(app,io){
     });
 
 
-    //Session
-    app.get("/session",function(req,res){
-        res.send("/");
-    });
-
+    
 
     //Logout
     app.get("/logout",function(req,res){
