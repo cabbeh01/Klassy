@@ -7,6 +7,7 @@ const codeGen = require("../codegenerator.js");
 module.exports = async function(app,io){
     
     
+
     //Main page
     app.get("/",auth, function(req,res){
         if(app.currentGroup == "1" || app.currentGroup == "0"){
@@ -100,13 +101,12 @@ module.exports = async function(app,io){
 
     //Pupil or guest connecting to a session
     app.get("/session/:id",async function(req,res){
-        res.render("session",{title:"Elev inloggad | "+ req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>"})
+        user = await getUser(req,res);
+        console.log(user);
+        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>",email:user,layout:"loggedin"})
     });
 
     app.post("/session",async function(req,res){
-        
-        
-
         res.redirect("/session/" + req.body.code);
     });
 
@@ -116,6 +116,7 @@ module.exports = async function(app,io){
         const nsp = io.of('/' + c);
         
         nsp.on('connection', function(socket){
+            
             console.log('someone connected on code: ' + c);
         });
 
@@ -128,6 +129,7 @@ module.exports = async function(app,io){
 
     //Lärare
     app.get("/teacher",auth,function(req,res){
+        
         if(app.currentGroup == "0"){
             res.render("teacher",{title:"Lärare inloggad",layout:"loggedin"});
         }
@@ -205,5 +207,38 @@ module.exports = async function(app,io){
         else{
             next();
         }
+    }
+
+    async function getUser(req,res){
+        let token = req.cookies.token;
+
+        let outData = null;
+        if(!(token === undefined)){
+            await jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
+                console.log("fsdfsd");
+                if(decoded !== undefined){
+                    await app.users.findOne({"email": decoded.email},function(err,data){
+                        
+                        if(!(data == null)){
+                            console.log(data);
+                            outData = data;
+                        }
+                        else{
+                            //return 0;
+                        }
+                        
+                    });
+                }
+                else{
+                    //return 0;
+                }
+            });
+            console.log("dsdasd");
+        }
+        else{
+            //return 0;
+        }
+        console.log("ccccc");
+        return outData;
     }
 }

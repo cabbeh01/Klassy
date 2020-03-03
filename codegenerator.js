@@ -6,7 +6,7 @@ module.exports = function(antal){
         let x = Math.floor(Math.random() * characters.length);
         i = i+characters[x];
     }
-
+    
     return i;
 }
 
