@@ -6,15 +6,20 @@ const codeGen = require("../codegenerator.js");
 
 module.exports = async function(app,io){
     
-    
-
     //Main page
-    app.get("/",auth, function(req,res){
-        if(app.currentGroup == "1" || app.currentGroup == "0"){
-            res.render('index',{title:"Home",layout:"loggedin"});
+    app.get("/",auth, async function(req,res){
+        try{
+            
+            if(app.currentGroup == "1" || app.currentGroup == "0"){
+                user = await retriveData(req,res);
+                res.render('index',{title:"Home",layout:"loggedin", user:user});
+            }
+            else{
+                res.render('index',{title:"Home"});
+            }
         }
-        else{
-            res.render('index',{title:"Home"});
+        catch(err){
+            console.log(err);
         }
         
     });
@@ -96,14 +101,14 @@ module.exports = async function(app,io){
     
     //Sessions
     app.get("/session",function(req,res){
-        res.send("/");
+        res.redirect("/");
     });
 
     //Pupil or guest connecting to a session
     app.get("/session/:id",async function(req,res){
-        user = await getUser(req,res);
+        user = await retriveData(req,res);
         console.log(user);
-        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>",email:user,layout:"loggedin"})
+        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>",email:user.email,layout:"loggedin",user:user.name})
     });
 
     app.post("/session",async function(req,res){
@@ -128,10 +133,10 @@ module.exports = async function(app,io){
     });
 
     //Lärare
-    app.get("/teacher",auth,function(req,res){
-        
+    app.get("/teacher",auth,async function(req,res){
+        user = await retriveData(req,res);
         if(app.currentGroup == "0"){
-            res.render("teacher",{title:"Lärare inloggad",layout:"loggedin"});
+            res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
         }
         else if(app.currentGroup == "1"){
             res.redirect("/pupil");
@@ -142,9 +147,10 @@ module.exports = async function(app,io){
     });
 
     //Elev
-    app.get("/pupil",auth,function(req,res){
+    app.get("/pupil",auth,async function(req,res){
+        user = await retriveData(req,res);
         if(app.currentGroup == "1"){
-            res.render('pupil',{title:"Elev inloggad",layout:"loggedin"});
+            res.render('pupil',{title:"Elev inloggad",layout:"loggedin",user:user});
         }
         else if(app.currentGroup == "0"){
             res.redirect("/teacher");
@@ -209,36 +215,35 @@ module.exports = async function(app,io){
         }
     }
 
-    async function getUser(req,res){
-        let token = req.cookies.token;
 
-        let outData = null;
-        if(!(token === undefined)){
-            await jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
-                console.log("fsdfsd");
+
+
+    function retriveData(req,res){
+
+        return new Promise(function(resolve, reject){
+            let token = req.cookies.token;
+            jwt.verify(token,process.env.PRIVATEKEY, function(err,decoded){
+                //console.log("fsdfsd");
                 if(decoded !== undefined){
-                    await app.users.findOne({"email": decoded.email},function(err,data){
+                    app.users.findOne({"email": decoded.email},function(err,data){
                         
                         if(!(data == null)){
-                            console.log(data);
-                            outData = data;
+                            resolve(data);
                         }
                         else{
-                            //return 0;
+                            reject("0");
                         }
                         
                     });
                 }
                 else{
-                    //return 0;
+                    reject("0");
                 }
             });
-            console.log("dsdasd");
-        }
-        else{
-            //return 0;
-        }
-        console.log("ccccc");
-        return outData;
+            
+            
+        });
+
+        
     }
 }
