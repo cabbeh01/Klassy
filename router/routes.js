@@ -11,7 +11,9 @@ module.exports = async function(app,io){
         try{
             
             if(app.currentGroup == "1" || app.currentGroup == "0"){
-                user = await retriveData(req,res);
+                
+                user = await getUser(req,res);
+
                 res.render('index',{title:"Home",layout:"loggedin", user:user});
             }
             else{
@@ -106,9 +108,11 @@ module.exports = async function(app,io){
 
     //Pupil or guest connecting to a session
     app.get("/session/:id",async function(req,res){
-        user = await retriveData(req,res);
+        user = await getUser(req,res);
+
+        //user = await app.users.findOne()
         console.log(user);
-        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>",email:user.email,layout:"loggedin",user:user.name})
+        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>",user:user,layout:"loggedin"})
     });
 
     app.post("/session",async function(req,res){
@@ -116,16 +120,18 @@ module.exports = async function(app,io){
     });
 
     //Teacher starting a session
-    app.get("/lesson/:id", function(req,res){
+    app.get("/lesson/:id", async function(req,res){
+        user = await getUser(req,res);
         const c = req.params.id;
         const nsp = io.of('/' + c);
         
         nsp.on('connection', function(socket){
             
-            console.log('someone connected on code: ' + c);
+            console.log(user.name + " connected on code: " + c);
+            res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
         });
 
-        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin"})
+        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
     });
     app.post("/startlesson", function(req,res){
         const code = codeGen(6);
@@ -134,7 +140,7 @@ module.exports = async function(app,io){
 
     //Lärare
     app.get("/teacher",auth,async function(req,res){
-        user = await retriveData(req,res);
+        user = await getUser(req,res);
         if(app.currentGroup == "0"){
             res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
         }
@@ -148,7 +154,7 @@ module.exports = async function(app,io){
 
     //Elev
     app.get("/pupil",auth,async function(req,res){
-        user = await retriveData(req,res);
+        user = await getUser(req,res);
         if(app.currentGroup == "1"){
             res.render('pupil',{title:"Elev inloggad",layout:"loggedin",user:user});
         }
@@ -216,34 +222,35 @@ module.exports = async function(app,io){
     }
 
 
-
-
-    function retriveData(req,res){
-
-        return new Promise(function(resolve, reject){
+    function verifyToken(req,res){
+        return new Promise(function(resolve,reject){
             let token = req.cookies.token;
             jwt.verify(token,process.env.PRIVATEKEY, function(err,decoded){
-                //console.log("fsdfsd");
                 if(decoded !== undefined){
-                    app.users.findOne({"email": decoded.email},function(err,data){
-                        
-                        if(!(data == null)){
-                            resolve(data);
-                        }
-                        else{
-                            reject("0");
-                        }
-                        
-                    });
+                    resolve(decoded)
                 }
                 else{
-                    reject("0");
+                    reject(0)
                 }
             });
-            
-            
         });
+    }
 
+
+    async function getUser(req,res){
+
+        let decodedToken = await verifyToken(req,res);
+
+        return new Promise(function(resolve,reject){
+            app.users.findOne({"email": decodedToken.email},function(err,data){        
+                if(!(data == null)){
+                    resolve(data);
+                }
+                else{
+                    reject(0);
+                }
+            });
+        });
         
     }
 }
