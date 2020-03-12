@@ -34,40 +34,41 @@ module.exports = async function(app,io){
     app.post("/login", async function(req,res){
 
         let inEmail = req.body.email;
-        let pass = req.body.password;
-
-        await app.users.findOne({"email": inEmail},function(err,data){
-
-            if(!(data == null)){
-                //console.log(data.password);
-                //console.log(pass);
-                bcrypt.compare(pass,data.password,function(err,succ){
-
-                    console.log(err);
-                    console.log(succ);
-                    if(succ){
-
-                        const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
-                        res.cookie("token",token,{httpOnly:true,sameSite: 'strict'});
-
-                        switch(data.group){
-                            case "0":
-                                res.redirect("/teacher");
-                                break;
-                            case "1":
-                                res.redirect("/pupil");
-                                break;
+            let pass = req.body.password;
+    
+            await app.users.findOne({"email": inEmail},function(err,data){
+    
+                if(!(data == null)){
+                    //console.log(data.password);
+                    //console.log(pass);
+                    bcrypt.compare(pass,data.password,function(err,succ){
+    
+                        console.log(err);
+                        console.log(succ);
+                        if(succ){
+    
+                            const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
+                            res.cookie("token",token,{httpOnly:true,sameSite: 'strict'});
+    
+                            switch(data.group){
+                                case "0":
+                                    res.redirect("/teacher");
+                                    break;
+                                case "1":
+                                    res.redirect("/pupil");
+                                    break;
+                            }
                         }
-                    }
-                    else{
-                        res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
-                    }
-                });
-            }
-            else{
-                res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
-            }
-        });
+                        else{
+                            res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+                        }
+                    });
+                }
+                else{
+                    res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+                }
+            });
+        
     });
 
 
@@ -111,9 +112,23 @@ module.exports = async function(app,io){
         user = await getUser(req,res);
 
         //user = await app.users.findOne()
-        console.log(user);
-        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,io:"<script>const socket = io('/"+ req.params.id + "');</script>",user:user,layout:"loggedin"})
+        //console.log(user);
+        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,
+        io:`
+        <script>
+        var socket = io("/${req.params.id}");
+        socket.on('connection', function () {
+            socket.emit('message',${JSON.stringify(user)});
+            socket.emit('hi');
+            socket.on('message', function (msg) {
+                socket.send('hi');
+            });
+          });
+        </script>
+        `,
+        user:user,layout:"loggedin"})
     });
+
 
     app.post("/session",async function(req,res){
         res.redirect("/session/" + req.body.code);
@@ -123,12 +138,18 @@ module.exports = async function(app,io){
     app.get("/lesson/:id", async function(req,res){
         user = await getUser(req,res);
         const c = req.params.id;
-        const nsp = io.of('/' + c);
+        const socket = io.of('/' + c);
         
-        nsp.on('connection', function(socket){
+        socket.on('connection', function(socket){
             
             console.log(user.name + " connected on code: " + c);
-            res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
+            socket.on('message', function (msg) { 
+                console.log(msg);
+            });
+            socket.on('disconnect', function () { 
+                console.log(user.name + " disconnected from code: " + c);
+            });
+            //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
         });
 
         res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
