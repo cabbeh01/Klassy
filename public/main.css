@@ -54,11 +54,12 @@ body{
     position: relative;
     background-color:#303030;
     color: #E1CC67;
-    display: block;
+    display: flex;
+    align-items: center;
 }
 
 #navigation h1{
-    display: inline-block;
+    display: inline-flex;
     border: 0px;
     margin:0px;
     padding:20px;
@@ -72,23 +73,36 @@ body{
     text-decoration:none;
     color: #E1CC67;
 }
-
+#name-container{
+    display: inline-block;
+}
 #navigation a:hover{
     color: rgb(192, 174, 82);
 }
 #user{
-    display: inline-block;
+    position: relative;
+    right: -240px;
+    display: inline-flex;
+    align-items: center;
 }
 #user h1{
     font-size: 30px;
     padding:0px;
 }
 #user img{
-    width:100px;
+    width:75px;
+    height: 75px;
     border-radius: 100%;
 }
 #user h2{
+    margin: 0px;
     font-size: 15px;
+    text-align: right;
+}
+
+#connected{
+    position: relative;
+    left: 20px;
 }
 
 input{
