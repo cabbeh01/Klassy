@@ -9,6 +9,3 @@ module.exports = function(antal){
     
     return i;
 }
-
-
-
