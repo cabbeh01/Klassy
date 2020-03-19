@@ -140,9 +140,10 @@ module.exports = async function(app,io){
         const c = req.params.id;
         const socket = io.of('/' + c);
         
-        socket.on('connection', function(socket){
-            
+        socket.on('connection', async function(socket){
+            console.log(socket.user);
             console.log(user.name + " connected on code: " + c);
+
             socket.on('message', function (msg) { 
                 console.log(msg);
             });
