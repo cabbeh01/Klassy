@@ -7,7 +7,7 @@ const codeGen = require("../codegenerator.js");
 module.exports = async function(app,io){
     
     //Main page
-    app.get("/",auth, async function(req,res){
+    app.get("/", auth, async function(req,res){
         try{
             
             if(app.currentGroup == "1" || app.currentGroup == "0"){
@@ -117,12 +117,13 @@ module.exports = async function(app,io){
         io:`
         <script>
         var socket = io("/${req.params.id}");
-        socket.on('connection', function () {
-            socket.emit('message',${JSON.stringify(user)});
+        socket.on('connect', function () {
+            socket.emit('user',${JSON.stringify(user)});
             socket.emit('hi');
-            socket.on('message', function (msg) {
-                socket.send('hi');
-            });
+          });
+
+        socket.on('disconnect', function () {
+           socket.emit(${JSON.stringify(user)});
           });
         </script>
         `,
@@ -136,19 +137,16 @@ module.exports = async function(app,io){
 
     //Teacher starting a session
     app.get("/lesson/:id", async function(req,res){
-        user = await getUser(req,res);
         const c = req.params.id;
         const socket = io.of('/' + c);
         
-        socket.on('connection', async function(socket){
-            console.log(socket.user);
-            console.log(user.name + " connected on code: " + c);
-
-            socket.on('message', function (msg) { 
-                console.log(msg);
+        socket.on('connection', function(socket){
+            
+            socket.on('user', function (usr) { 
+                console.log(usr.name + " connected on code: " + c);
             });
-            socket.on('disconnect', function () { 
-                console.log(user.name + " disconnected from code: " + c);
+            socket.on('disconnect', function (usr) { 
+                console.log(usr.name + " disconnected from code: " + c);
             });
             //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
         });
