@@ -6,6 +6,7 @@ const codeGen = require("../codegenerator.js");
 
 module.exports = async function(app,io){
     
+    
     //Main page
     app.get("/", auth, async function(req,res){
         try{
@@ -33,9 +34,10 @@ module.exports = async function(app,io){
 
     app.post("/login", async function(req,res){
 
-        let inEmail = req.body.email;
+        try{
+            let inEmail = req.body.email;
             let pass = req.body.password;
-    
+        
             await app.users.findOne({"email": inEmail},function(err,data){
     
                 if(!(data == null)){
@@ -46,9 +48,9 @@ module.exports = async function(app,io){
                         console.log(err);
                         console.log(succ);
                         if(succ){
-    
+                            
                             const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
-                            res.cookie("token",token,{httpOnly:true,sameSite: 'strict'});
+                            res.cookie("token",token,{httpOnly:true, maxAge:(2 * 24 * 60 * 60 * 1000),sameSite: 'strict'});
     
                             switch(data.group){
                                 case "0":
@@ -68,6 +70,11 @@ module.exports = async function(app,io){
                     res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
                 }
             });
+        }
+        catch(err){
+            console.log(err);
+        }
+        
         
     });
 
@@ -198,79 +205,102 @@ module.exports = async function(app,io){
 
     function auth(req,res,next){
         
-        let token = req.cookies.token;
-
-        if(!(token === undefined)){
-            jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
-                if(decoded !== undefined){
-                    await app.users.findOne({"email": decoded.email},function(err,data){
-                        
-                        if(!(data == null)){
-                            //console.log(data.group);
-                            if(data.password == decoded.password){
-                                app.currentGroup = data.group;
-                                next();
+        try{
+            let token = req.cookies.token;
+        
+            if(!(token === undefined)){
+                jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
+                    if(decoded !== undefined){
+                        await app.users.findOne({"email": decoded.email},function(err,data){
+                            
+                            if(!(data == null)){
+                                //console.log(data.group);
+                                if(data.password == decoded.password){
+                                    app.currentGroup = data.group;
+                                    next();
+                                }
+                                else{
+                                    app.currentGroup = undefined;
+                                    next();
+                                }
                             }
-                            else{
-                                app.currentGroup = undefined;
-                                next();
-                            }
-                        }
-                        
-                    });
-                }
-            });
+                            
+                        });
+                    }
+                });
+            }
+            else{
+                res.clearCookie("token");
+                app.currentGroup = undefined;
+                next();
+            }
         }
-        else{
-            res.clearCookie("token");
-            app.currentGroup = undefined;
-            next();
+        catch(err){
+            console.log(err);
         }
+        
         
     }
 
     function loggedinRedirector(req,res,next){
-        if(app.currentGroup == "0"){
-            res.redirect("/teacher");
+        try{
+            if(app.currentGroup == "0"){
+                res.redirect("/teacher");
+            }
+            else if(app.currentGroup == "1"){
+                res.redirect("/pupil");
+            }
+            else{
+                next();
+            }
         }
-        else if(app.currentGroup == "1"){
-            res.redirect("/pupil");
-        }
-        else{
-            next();
+        catch(err){
+            console.log(err);
         }
     }
 
 
     function verifyToken(req,res){
-        return new Promise(function(resolve,reject){
-            let token = req.cookies.token;
-            jwt.verify(token,process.env.PRIVATEKEY, function(err,decoded){
-                if(decoded !== undefined){
-                    resolve(decoded)
-                }
-                else{
-                    reject(0)
-                }
+        try{
+            return new Promise(function(resolve,reject){
+                let token = req.cookies.token;
+                jwt.verify(token,process.env.PRIVATEKEY, function(err,decoded){
+                    if(decoded !== undefined){
+                        resolve(decoded)
+                    }
+                    else{
+                        reject(0)
+                    }
+                });
             });
-        });
+        }
+        catch(err){
+            console.log(err);
+        }
+        
     }
 
 
     async function getUser(req,res){
 
-        let decodedToken = await verifyToken(req,res);
+        try{
+            let decodedToken = await verifyToken(req,res);
 
-        return new Promise(function(resolve,reject){
-            app.users.findOne({"email": decodedToken.email},function(err,data){        
-                if(!(data == null)){
-                    resolve(data);
-                }
-                else{
-                    reject(0);
-                }
+            return new Promise(function(resolve,reject){
+                app.users.findOne({"email": decodedToken.email},function(err,data){        
+                    if(!(data == null)){
+                        resolve(data);
+                    }
+                    else{
+                        reject(0);
+                    }
+                });
             });
-        });
+        }
+        catch(err){
+            console.log(err);
+        }
+        
         
     }
 }

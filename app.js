@@ -46,7 +46,7 @@ async function makeConnection(){
     const db = await con.db('dbKlassy');
 
     app.users = await db.collection('users');
-
+    
     require('./router/routes')(app,io);
 }
 
