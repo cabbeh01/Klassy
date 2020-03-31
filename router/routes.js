@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 //const secret = require('./secret');
 const bcrypt = require('bcryptjs');
 const codeGen = require("../codegenerator.js");
+const mail = require("../mail.js");
 
 module.exports = async function(app,io){
     
@@ -96,6 +97,7 @@ module.exports = async function(app,io){
                     app.users.insertOne(req.body,function(err){
                         //console.log(err);
                     });
+                    mail("cabbe.h01@gmail.com","Verify account","Var vänligen och verifiera dig!");
                     res.redirect("/login");
                 }
                 else{
@@ -108,6 +110,16 @@ module.exports = async function(app,io){
         //res.send(req.body.group);
     });
 
+    //Confirmation after registation
+    app.get("/confirm/:id/:code", async function(req,res){
+        try{
+            
+            res.redirect("/",)
+        }
+        catch{
+
+        }
+    });
     
     //Sessions
     app.get("/session",function(req,res){
@@ -192,9 +204,6 @@ module.exports = async function(app,io){
             res.redirect("/login");
         }
     });
-
-
-    
 
     //Logout
     app.get("/logout",function(req,res){
@@ -303,4 +312,7 @@ module.exports = async function(app,io){
         
         
     }
+
+    
+    
 }
