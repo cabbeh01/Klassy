@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-module.exports = function(receiver,subjectText,data){
+module.exports = function(receiver,subjectText,data,route){
     async function main() {
         // Create reusable transporter object using the default SMTP transport
         let transporter = nodemailer.createTransport({
@@ -19,7 +19,7 @@ module.exports = function(receiver,subjectText,data){
           to: receiver, // Receivers/Receivers
           subject: subjectText, // Subject line
           text: data, // Plain text body
-          html: "<b>Hello world?</b>" // Html body
+          html: "<a href='"+route+"'>Klicka här för verifiera ditt konto</a>" // Html body
         });
       
         console.log("Message sent: %s", info.messageId);

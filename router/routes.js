@@ -86,18 +86,24 @@ module.exports = async function(app,io){
     });
 
     app.post("/register",async function(req,res){
-        bcrypt.hash(req.body.password,12,function(err,hash){
+        bcrypt.hash(req.body.password,12,async function(err,hash){
             let inEmail = req.body.email;
             
-            app.users.findOne({"email": inEmail},function(err,data){
+            await app.users.findOne({"email": inEmail},async function(err,data){
                 
                 if(data == null){
+                    
                     req.body.password = hash;
-
-                    app.users.insertOne(req.body,function(err){
+                    req.body.verified =  false;
+                    let code = codeGen(26);
+                    req.body.verifyCode = code;
+                    await app.users.insertOne(req.body,function(err,result){
+                        
                         //console.log(err);
+                        //console.log(result.insertedId);
+                        mail(req.body.email,"Verify account","Var vänligen och verifiera dig!","http://localhost:2380/confirm/"+result.ops[0]._id+"/"+code);
+                        
                     });
-                    mail("cabbe.h01@gmail.com","Verify account","Var vänligen och verifiera dig!");
                     res.redirect("/login");
                 }
                 else{
@@ -113,11 +119,22 @@ module.exports = async function(app,io){
     //Confirmation after registation
     app.get("/confirm/:id/:code", async function(req,res){
         try{
-            
-            res.redirect("/",)
+            let id = req.params.id;
+            await app.users.findOne({"_id": objcectId(id)},async function(err,data){
+                console.log(data);
+                /*if(data.verifyCode == req.params.code){
+                    data.verified = true;
+                    app.users.update({"_id":id},{$set:{verified:true}},function(err){
+                        console.log(err);
+                    });
+                    res.send("/teacher");
+                }*/
+            });
+            res.send("/",)
         }
-        catch{
-
+        catch(err){
+            console.log(err);
+            res.send("/");
         }
     });
     
