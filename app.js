@@ -9,6 +9,7 @@ const http = require('http').createServer(app);
 const io = require("socket.io")(http);
 const hbs = require("express-handlebars");
 const mongo = require("mongodb").MongoClient;
+const objID = require("mongodb").ObjectID;
 //console.log(conString);
 
 app.set("view engine","hbs");
@@ -46,7 +47,7 @@ async function makeConnection(){
     const db = await con.db('dbKlassy');
 
     app.users = await db.collection('users');
-    
+    app.objID = objID;
     require('./router/routes')(app,io);
 }
 

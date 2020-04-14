@@ -44,28 +44,34 @@ module.exports = async function(app,io){
                 if(!(data == null)){
                     //console.log(data.password);
                     //console.log(pass);
-                    bcrypt.compare(pass,data.password,function(err,succ){
+                    if(data.verified){
+                        bcrypt.compare(pass,data.password,function(err,succ){
     
-                        console.log(err);
-                        console.log(succ);
-                        if(succ){
-                            
-                            const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
-                            res.cookie("token",token,{httpOnly:true, maxAge:(2 * 24 * 60 * 60 * 1000),sameSite: 'strict'});
-    
-                            switch(data.group){
-                                case "0":
-                                    res.redirect("/teacher");
-                                    break;
-                                case "1":
-                                    res.redirect("/pupil");
-                                    break;
+                            console.log(err);
+                            console.log(succ);
+                            if(succ){
+                                
+                                const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
+                                res.cookie("token",token,{httpOnly:true, maxAge:(2 * 24 * 60 * 60 * 1000),sameSite: 'strict'});
+        
+                                switch(data.group){
+                                    case "0":
+                                        res.redirect("/teacher");
+                                        break;
+                                    case "1":
+                                        res.redirect("/pupil");
+                                        break;
+                                }
                             }
-                        }
-                        else{
-                            res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
-                        }
-                    });
+                            else{
+                                res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+                            }
+                        });
+                    }
+                    else{
+                        res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+                    }
+                    
                 }
                 else{
                     res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
@@ -120,21 +126,30 @@ module.exports = async function(app,io){
     app.get("/confirm/:id/:code", async function(req,res){
         try{
             let id = req.params.id;
-            await app.users.findOne({"_id": objcectId(id)},async function(err,data){
-                console.log(data);
-                /*if(data.verifyCode == req.params.code){
-                    data.verified = true;
-                    app.users.update({"_id":id},{$set:{verified:true}},function(err){
-                        console.log(err);
-                    });
-                    res.send("/teacher");
-                }*/
+            await app.users.findOne({"_id": app.objID(id)},async function(err,data){
+                //console.log(data);
+                try{
+                    if(data.verifyCode == req.params.code){
+                        data.verified = true;
+                        await app.users.updateOne({"_id":app.objID(id)},{$set:{verified:true}},function(err){
+                            console.log(err);
+                        });
+                        res.render("confirm",{title:"Verifierad",mess:"Du är nu verifierad och kan logga in"});
+                    }
+                    else{
+                        res.render("confirm",{title:"Det gick inte att verifiera",mess:"Det gick inte att verifiera"});
+                    }
+                }
+                catch{
+                    res.render("confirm",{title:"Det gick inte att verifiera",mess:"Det gick inte att verifiera"});
+                }
+                
             });
-            res.send("/",)
+            
         }
         catch(err){
-            console.log(err);
-            res.send("/");
+            //console.log(err);
+            res.redirect("/");
         }
     });
     
@@ -228,6 +243,12 @@ module.exports = async function(app,io){
         res.clearCookie("token");
         res.redirect("/");
     });
+
+    function verifiedAcc(req,res,next){
+        if(usr.verified){
+
+        }
+    }
 
     function auth(req,res,next){
         
