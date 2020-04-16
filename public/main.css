@@ -8,10 +8,16 @@ body{
     background-color: #5D5E56;
 }
 
+
+
+
+
 #mid,#mid form, #mid input, input[type="radio"]{
     margin-left: auto;
     margin-right: auto;
 }
+
+
 
 #mid{
     text-align: center;
@@ -100,9 +106,37 @@ body{
     text-align: right;
 }
 
-#connected{
-    position: relative;
-    left: 20px;
+table {
+    border-collapse: collapse;
+    empty-cells: hide;
+}
+  
+td{
+    min-width: 15vw;
+}
+table, td {
+    border: 1px solid black;
+}
+#key{
+    height: 90px;
+}
+.elementinn{
+    text-align: left;
+    margin-left: 30px;
+}
+.element h2{
+    margin: 0;
+}
+#rubrik
+{
+    font-size: 30px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+#rubrik2
+{
+    font-size: 30px;
 }
 
 input{

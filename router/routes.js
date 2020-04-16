@@ -154,12 +154,12 @@ module.exports = async function(app,io){
     });
     
     //Sessions
-    app.get("/session",function(req,res){
+    app.get("/session",verifiedAcc,function(req,res){
         res.redirect("/");
     });
 
     //Pupil or guest connecting to a session
-    app.get("/session/:id",async function(req,res){
+    app.get("/session/:id",verifiedAcc,async function(req,res){
         user = await getUser(req,res);
 
         //user = await app.users.findOne()
@@ -182,12 +182,12 @@ module.exports = async function(app,io){
     });
 
 
-    app.post("/session",async function(req,res){
+    app.post("/session",verifiedAcc,async function(req,res){
         res.redirect("/session/" + req.body.code);
     });
 
     //Teacher starting a session
-    app.get("/lesson/:id", async function(req,res){
+    app.get("/lesson/:id",verifiedAcc, async function(req,res){
         const c = req.params.id;
         const socket = io.of('/' + c);
         
@@ -210,7 +210,7 @@ module.exports = async function(app,io){
     });
 
     //Lärare
-    app.get("/teacher",auth,async function(req,res){
+    app.get("/teacher",verifiedAcc,auth,async function(req,res){
         user = await getUser(req,res);
         if(app.currentGroup == "0"){
             res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
@@ -224,10 +224,10 @@ module.exports = async function(app,io){
     });
 
     //Elev
-    app.get("/pupil",auth,async function(req,res){
+    app.get("/pupil",verifiedAcc,auth,async function(req,res){
         user = await getUser(req,res);
         if(app.currentGroup == "1"){
-            res.render('pupil',{title:"Elev inloggad",layout:"loggedin",user:user});
+            res.render("pupil",{title:"Elev inloggad",layout:"loggedin",user:user});
         }
         else if(app.currentGroup == "0"){
             res.redirect("/teacher");
@@ -244,9 +244,13 @@ module.exports = async function(app,io){
         res.redirect("/");
     });
 
-    function verifiedAcc(req,res,next){
-        if(usr.verified){
-
+    async function verifiedAcc(req,res,next){
+        user = await getUser(req,res);
+        if(!user.verified){
+            res.render('login',{title:"Ej verifierad", errmess:"Du måste verifiera ditt konto vänligen kolla din inkorg"});
+        }
+        else{
+            next();
         }
     }
 
