@@ -12,6 +12,8 @@ const mongo = require("mongodb").MongoClient;
 const objID = require("mongodb").ObjectID;
 //console.log(conString);
 
+io.set('heartbeat timeout', 60000);
+
 app.set("view engine","hbs");
 
 app.engine( 'hbs', hbs( {
@@ -48,6 +50,8 @@ async function makeConnection(){
 
     app.users = await db.collection('users');
     app.objID = objID;
+
+    
     require('./router/routes')(app,io);
 }
 

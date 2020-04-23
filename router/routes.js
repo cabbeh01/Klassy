@@ -8,6 +8,7 @@ const mail = require("../mail.js");
 module.exports = async function(app,io){
     
     
+    
     //Main page
     app.get("/", auth, async function(req,res){
         try{
@@ -222,6 +223,61 @@ module.exports = async function(app,io){
             res.redirect("/login");
         }
     });
+
+
+    io.on('connection', (socket) => {
+
+        console.log(socket.id + ' uppkopplad mot servern')
+        socket.room = 'default';
+        socket.join('default')
+        socket.isOwner = false;
+    
+        //---------------------------------Läraren skapar sina rum här---------------------------------
+        socket.on('create_room', (data) => {
+            try {
+                
+            }
+            catch (error) {
+                
+            }
+    
+        })
+    
+        //---------------------------------Eleverna joinar dem här---------------------------------
+        socket.on('join_room', (data) => {
+            try {
+                
+    
+            }
+            catch (error) {
+                console.error(error);
+                socket.emit('client_error', "Kunde inte joina rummet.");
+            }
+        })
+        //---------------------------------Lämna rummet---------------------------------
+        socket.on('left_room', (data) => {
+            try {
+                
+            }
+            catch (error) {
+               
+            }
+        })
+       
+    
+        //---------------------------------Stänger webbläsaren---------------------------------
+        socket.on('disconnect', function () {
+            try {
+                
+            }
+            catch (error) {
+                console.error(error);
+            }
+
+        });
+    })
+
+
 
     //Elev
     app.get("/pupil",verifiedAcc,auth,async function(req,res){
