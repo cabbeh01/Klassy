@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const codeGen = require("../codegenerator.js");
 const mail = require("../mail.js");
+const valiInputLogin = require("../validationLogin.js");
+const valiInputRegister = require("../validationRegister.js");
 
 module.exports = async function(app,io){
     
@@ -34,53 +36,60 @@ module.exports = async function(app,io){
         res.render('login',{title:"Inlogging"});
     });
 
-    app.post("/login", async function(req,res){
+    app.post("/login",valiInputLogin, async function(req,res){
 
         try{
             let inEmail = req.body.email;
             let pass = req.body.password;
-        
-            await app.users.findOne({"email": inEmail},function(err,data){
+            
+            if(!req.err){
+                await app.users.findOne({"email": inEmail},function(err,data){
     
-                if(!(data == null)){
-                    //console.log(data.password);
-                    //console.log(pass);
-                    if(data.verified){
-                        bcrypt.compare(pass,data.password,function(err,succ){
-    
-                            console.log(err);
-                            console.log(succ);
-                            if(succ){
-                                
-                                const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
-                                res.cookie("token",token,{httpOnly:true, maxAge:(2 * 24 * 60 * 60 * 1000),sameSite: 'strict'});
+                    if(!(data == null)){
+                        //console.log(data.password);
+                        //console.log(pass);
+                        if(data.verified){
+                            bcrypt.compare(pass,data.password,function(err,succ){
         
-                                switch(data.group){
-                                    case "0":
-                                        res.redirect("/teacher");
-                                        break;
-                                    case "1":
-                                        res.redirect("/pupil");
-                                        break;
+                                console.log(err);
+                                console.log(succ);
+                                if(succ){
+                                    
+                                    const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:3600});
+                                    res.cookie("token",token,{httpOnly:true, maxAge:(2 * 24 * 60 * 60 * 1000),sameSite: 'strict'});
+            
+                                    switch(data.group){
+                                        case "0":
+                                            res.redirect("/teacher");
+                                            break;
+                                        case "1":
+                                            res.redirect("/pupil");
+                                            break;
+                                    }
                                 }
-                            }
-                            else{
-                                res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
-                            }
-                        });
+                                else{
+                                    res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+                                }
+                            });
+                        }
+                        else{
+                            res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+                        }
+                        
                     }
                     else{
-                        res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
+                        res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
                     }
-                    
-                }
-                else{
-                    res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt"});
-                }
-            });
+                });
+            }
+            else{
+                //console.log(req.err);
+                res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+            }
+            
         }
         catch(err){
-            console.log(err);
+            res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
         }
         
         
@@ -92,34 +101,40 @@ module.exports = async function(app,io){
         res.render('register',{title:"Registrering"});
     });
 
-    app.post("/register",async function(req,res){
-        bcrypt.hash(req.body.password,12,async function(err,hash){
-            let inEmail = req.body.email;
-            
-            await app.users.findOne({"email": inEmail},async function(err,data){
+    app.post("/register",valiInputRegister,async function(req,res){
+        if(!req.err){
+            bcrypt.hash(req.body.password,12,async function(err,hash){
+                let inEmail = req.body.email;
                 
-                if(data == null){
+                    await app.users.findOne({"email": inEmail},async function(err,data){
                     
-                    req.body.password = hash;
-                    req.body.verified =  false;
-                    let code = codeGen(26);
-                    req.body.verifyCode = code;
-                    await app.users.insertOne(req.body,function(err,result){
-                        
-                        //console.log(err);
-                        //console.log(result.insertedId);
-                        mail(req.body.email,"Verify account","Var vänligen och verifiera dig!","http://localhost:2380/confirm/"+result.ops[0]._id+"/"+code);
+                        if(data == null){
+                            
+                            req.body.password = hash;
+                            req.body.verified =  false;
+                            let code = codeGen(26);
+                            req.body.verifyCode = code;
+                            await app.users.insertOne(req.body,function(err,result){
+                                
+                                //console.log(err);
+                                //console.log(result.insertedId);
+                                mail(req.body.email,"Verify account","Var vänligen och verifiera dig!","http://localhost:2380/confirm/"+result.ops[0]._id+"/"+code);
+                                
+                            });
+                            res.redirect("/login");
+                        }
+                        else{
+                            res.render('register',{title:"Registrering", errmess:"Går inte registrera användaren", name: req.body.name, class: req.body.class, email: req.body.email});
+                        }
                         
                     });
-                    res.redirect("/login");
-                }
-                else{
-                    res.render('register',{title:"Registrering", errmess:"Går inte registrera användaren"});
-                }
-                
             });
 
-        });
+        }
+        else{
+            //console.log(req.err);
+            res.render('register',{title:"Registrering", errmess:"Går inte registrera användaren", name: req.body.name, class: req.body.class, email: req.body.email});
+        }
         //res.send(req.body.group);
     });
 
@@ -205,6 +220,11 @@ module.exports = async function(app,io){
 
         res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
     });
+
+    app.post("/preplesson", function(req,res){
+        res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user});
+    });
+
     app.post("/startlesson", function(req,res){
         const code = codeGen(6);
         res.redirect("/lesson/" + code);
