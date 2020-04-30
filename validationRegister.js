@@ -1,3 +1,5 @@
+//Här sker validering av inmatningen på registeringen i Klassy
+
 const Joi = require("@hapi/joi");
 
 module.exports = async function(req,res,next){

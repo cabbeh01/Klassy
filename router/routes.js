@@ -226,6 +226,7 @@ module.exports = async function(app,io){
     });
 
     app.post("/startlesson", function(req,res){
+        console.log(req.body);
         const code = codeGen(6);
         res.redirect("/lesson/" + code);
     });

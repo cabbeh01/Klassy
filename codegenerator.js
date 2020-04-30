@@ -1,3 +1,5 @@
+//Denna modulen generarar koder till klassrummen
+
 module.exports = function(antal){
     let i ="";
     let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
