@@ -4,10 +4,11 @@
 
 <div id="prepless">
     <h1>Information om lektionen</h1>
+    
     <form action="/startlesson" method="post">
         <div id="editor"></div>
+        <input type="hidden" id="info" name="info" value="">
         <input type="submit" value="Starta lektion">
-        <input type="hidden" name="text" id="hiddtext">
     </form>
 </div>
 
@@ -18,6 +19,35 @@
 <!-- Initialize Quill editor -->
 <script>
   var quill = new Quill('#editor', {
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, 4, 5, 6,  false] }],
+        ['bold', 'italic', 'underline','strike'],
+        [{'color': ["#000000", "#e60000", "#ff9900", "#ffff00", "#008a00", "#0066cc", "#9933ff", "#ffffff", "#facccc", "#ffebcc", "#ffffcc", "#cce8cc", "#cce0f5", "#ebd6ff", "#bbbbbb", "#f06666", "#ffc266", "#ffff66", "#66b966", "#66a3e0", "#c285ff", "#888888", "#a10000", "#b26b00", "#b2b200", "#006100", "#0047b2", "#6b24b2", "#444444", "#5c0000", "#663d00", "#666600", "#003700", "#002966", "#3d1466", 'custom-color']}],
+        ['link'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['clean']
+      ]
+    },
+    
     theme: 'snow'
   });
+
+
+  quill.getModule('toolbar').addHandler('color', (value) => {
+
+    // if the user clicked the custom-color option, show a prompt window to get the color
+    if (value == 'custom-color') {
+        value = prompt('Enter Hex/RGB/RGBA');
+    }
+
+    quill.format('color', value);
+  });
+
+
+  
+  quill.on('text-change', function(delta, oldDelta, source) {
+    document.getElementById("info").value = quill.root.innerHTML;
+  })
+  
 </script>

@@ -205,6 +205,7 @@ module.exports = async function(app,io){
     //Teacher starting a session
     app.get("/lesson/:id",verifiedAcc, async function(req,res){
         const c = req.params.id;
+        const lessInfo = app.info;
         const socket = io.of('/' + c);
         
         socket.on('connection', function(socket){
@@ -218,7 +219,7 @@ module.exports = async function(app,io){
             //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
         });
 
-        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
+        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lessInfo})
     });
 
     app.post("/preplesson", function(req,res){
@@ -226,8 +227,9 @@ module.exports = async function(app,io){
     });
 
     app.post("/startlesson", function(req,res){
-        console.log(req.body);
+        console.log(req.body.info);
         const code = codeGen(6);
+        app.info = req.body.info;
         res.redirect("/lesson/" + code);
     });
 
@@ -432,6 +434,22 @@ module.exports = async function(app,io){
         
     }
 
-    
+    async function setLesson(req,res,code){
+        await app.users.findOne({"email": inEmail},async function(err,data){
+                    
+            if(data == null){
+                
+                
+            }
+            else{
+                
+            }
+            
+        });
+    }
+
+    async function getLesson(req,res,code){
+        
+    }
     
 }
