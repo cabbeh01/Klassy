@@ -9,12 +9,12 @@ const valiInputRegister = require("../validationRegister.js");
 
 module.exports = async function(app,io){
     
-    
-    
     //Main page
     app.get("/", auth, async function(req,res){
-        try{
-            
+        
+        res.render('index',{title:"Home"});
+        /*try{
+            res.render('index',{title:"Home"});
             if(app.currentGroup == "1" || app.currentGroup == "0"){
                 
                 user = await getUser(req,res);
@@ -27,7 +27,8 @@ module.exports = async function(app,io){
         }
         catch(err){
             console.log(err);
-        }
+            res.render('index',{title:"Home"});
+        }*/
         
     });
 
@@ -230,6 +231,7 @@ module.exports = async function(app,io){
         console.log(req.body.info);
         const code = codeGen(6);
         app.info = req.body.info;
+        setLesson(req,res,code,user);
         res.redirect("/lesson/" + code);
     });
 
@@ -324,13 +326,19 @@ module.exports = async function(app,io){
     });
 
     async function verifiedAcc(req,res,next){
-        user = await getUser(req,res);
-        if(!user.verified){
-            res.render('login',{title:"Ej verifierad", errmess:"Du måste verifiera ditt konto vänligen kolla din inkorg"});
+        try{
+            user = await getUser(req,res);
+            if(!user.verified){
+                res.render('login',{title:"Ej verifierad", errmess:"Du måste verifiera ditt konto vänligen kolla din inkorg"});
+            }
+            else{
+                next();
+            }
         }
-        else{
-            next();
+        catch{
+            res.redirect("/");
         }
+        
     }
 
     function auth(req,res,next){
@@ -434,12 +442,16 @@ module.exports = async function(app,io){
         
     }
 
-    async function setLesson(req,res,code){
-        await app.users.findOne({"email": inEmail},async function(err,data){
-                    
+    async function setLesson(req,res,code,owner){
+
+        var lesson = {key:code, info:req.body.info, ownerId:owner._id};
+        console.log(lesson);
+        await app.lessons.findOne({"key": code},async function(err,data){
+            var lesson = {key:code, info:req.body.info, ownerId:owner._id}
             if(data == null){
-                
-                
+                /*await app.lessons.insertOne(lesson,function(err,result){
+                                
+                }); */
             }
             else{
                 
@@ -448,8 +460,6 @@ module.exports = async function(app,io){
         });
     }
 
-    async function getLesson(req,res,code){
-        
-    }
+    
     
 }
