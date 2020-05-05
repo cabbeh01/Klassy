@@ -12,9 +12,7 @@ module.exports = async function(app,io){
     //Main page
     app.get("/", auth, async function(req,res){
         
-        res.render('index',{title:"Home"});
-        /*try{
-            res.render('index',{title:"Home"});
+        try{
             if(app.currentGroup == "1" || app.currentGroup == "0"){
                 
                 user = await getUser(req,res);
@@ -28,7 +26,7 @@ module.exports = async function(app,io){
         catch(err){
             console.log(err);
             res.render('index',{title:"Home"});
-        }*/
+        }
         
     });
 
@@ -112,6 +110,7 @@ module.exports = async function(app,io){
                         if(data == null){
                             
                             req.body.password = hash;
+                            delete req.body.repassword;
                             req.body.verified =  false;
                             let code = codeGen(26);
                             req.body.verifyCode = code;
@@ -442,6 +441,7 @@ module.exports = async function(app,io){
         
     }
 
+    
     async function setLesson(req,res,code,owner){
 
         var lesson = {key:code, info:req.body.info, ownerId:owner._id};
@@ -449,9 +449,7 @@ module.exports = async function(app,io){
         await app.lessons.findOne({"key": code},async function(err,data){
             var lesson = {key:code, info:req.body.info, ownerId:owner._id}
             if(data == null){
-                /*await app.lessons.insertOne(lesson,function(err,result){
-                                
-                }); */
+                
             }
             else{
                 
@@ -459,7 +457,7 @@ module.exports = async function(app,io){
             
         });
     }
-
+    
     
     
 }
