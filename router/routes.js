@@ -176,25 +176,35 @@ module.exports = async function(app,io){
 
     //Pupil or guest connecting to a session
     app.get("/session/:id",verifiedAcc,async function(req,res){
-        user = await getUser(req,res);
+        try{
+            let user = await getUser(req,res);
+            let lesson = await getLesson(req.params.id);
+
+            console.log(lesson);
+            res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info,
+            io:`
+            <script>
+            var socket = io("/${req.params.id}");
+            socket.on('connect', function () {
+                socket.emit('user',${JSON.stringify(user)});
+                socket.emit('hi');
+            });
+
+            socket.on('disconnect', function () {
+            socket.emit(${JSON.stringify(user)});
+            });
+            </script>
+            `,
+            user:user,layout:"loggedin"})
+        }
+        catch(err){
+            console.log(err);
+        }
+        
 
         //user = await app.users.findOne()
         //console.log(user);
-        res.render("session",{title:"Elev inloggad | "+ req.params.id,code:req.params.id,
-        io:`
-        <script>
-        var socket = io("/${req.params.id}");
-        socket.on('connect', function () {
-            socket.emit('user',${JSON.stringify(user)});
-            socket.emit('hi');
-          });
-
-        socket.on('disconnect', function () {
-           socket.emit(${JSON.stringify(user)});
-          });
-        </script>
-        `,
-        user:user,layout:"loggedin"})
+        
     });
 
 
@@ -202,7 +212,43 @@ module.exports = async function(app,io){
         res.redirect("/session/" + req.body.code);
     });
 
+    
+
+
+
+
+
+    
+    //Lärare
+    app.get("/teacher",verifiedAcc,auth,async function(req,res){
+        user = await getUser(req,res);
+        if(app.currentGroup == "0"){
+            res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
+        }
+        else if(app.currentGroup == "1"){
+            res.redirect("/pupil");
+        }
+        else{
+            res.redirect("/login");
+        }
+    });
+
+    
+    //Teacher preparing a lesson
+    app.post("/preplesson", function(req,res){
+        res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user});
+    });
+    
     //Teacher starting a session
+    app.post("/startlesson", function(req,res){
+        console.log(req.body.info);
+        const code = codeGen(6);
+        app.info = req.body.info;
+        setLesson(req,res,code,user);
+        res.redirect("/lesson/" + code);
+    });
+
+
     app.get("/lesson/:id",verifiedAcc, async function(req,res){
         const c = req.params.id;
         const lessInfo = app.info;
@@ -222,31 +268,12 @@ module.exports = async function(app,io){
         res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lessInfo})
     });
 
-    app.post("/preplesson", function(req,res){
-        res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user});
-    });
 
-    app.post("/startlesson", function(req,res){
-        console.log(req.body.info);
-        const code = codeGen(6);
-        app.info = req.body.info;
-        setLesson(req,res,code,user);
-        res.redirect("/lesson/" + code);
-    });
 
-    //Lärare
-    app.get("/teacher",verifiedAcc,auth,async function(req,res){
-        user = await getUser(req,res);
-        if(app.currentGroup == "0"){
-            res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
-        }
-        else if(app.currentGroup == "1"){
-            res.redirect("/pupil");
-        }
-        else{
-            res.redirect("/login");
-        }
-    });
+
+
+
+
 
 
     io.on('connection', (socket) => {
@@ -292,7 +319,7 @@ module.exports = async function(app,io){
         //---------------------------------Stänger webbläsaren---------------------------------
         socket.on('disconnect', function () {
             try {
-                
+                console.log(socket.id + ' disconnectar från servern')
             }
             catch (error) {
                 console.error(error);
@@ -442,20 +469,42 @@ module.exports = async function(app,io){
     }
 
     
-    async function setLesson(req,res,code,owner){
+    async function setLesson(req,res,code,owner,bil){
 
-        var lesson = {key:code, info:req.body.info, ownerId:owner._id};
+        var lesson = {key:code, info:req.body.info,bilagor:bil, ownerId:owner._id, listUsers:""};
         console.log(lesson);
         await app.lessons.findOne({"key": code},async function(err,data){
             var lesson = {key:code, info:req.body.info, ownerId:owner._id}
             if(data == null){
-                
+                await app.lessons.insertOne(lesson,function(err,result){
+                    if(err){
+                        console.log(err);
+                    }
+                });
             }
             else{
-                
+                setLesson(req,res,codeGen(6),lesson.ownerId,lesson.bil,lesson.listUsers);
             }
             
         });
+    }
+
+    function getLesson(code){
+
+        try{
+            return new Promise(async function(resolve,reject){
+                await app.lessons.findOne({"key": code},async function(err,data){
+                    //var lesson = {key:code, info:req.body.info, ownerId:owner._id}
+                    if(err){
+                        reject(null)
+                    }
+                    resolve(data);
+                });
+            });
+        }
+        catch(err){
+            console.log(err);
+        }
     }
     
     
