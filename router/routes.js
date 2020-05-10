@@ -6,6 +6,7 @@ const codeGen = require("../codegenerator.js");
 const mail = require("../mail.js");
 const valiInputLogin = require("../validationLogin.js");
 const valiInputRegister = require("../validationRegister.js");
+const valiInputCode = require("../validationCode.js");
 
 module.exports = async function(app,io){
     
@@ -175,29 +176,46 @@ module.exports = async function(app,io){
     });
 
     //Pupil or guest connecting to a session
-    app.get("/session/:id",verifiedAcc,async function(req,res){
+    app.get("/session/:id",verifiedAcc,valiInputCode,async function(req,res){
         try{
-            let user = await getUser(req,res);
-            let lesson = await getLesson(req.params.id);
-
-            console.log(lesson);
-            res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info,
-            io:`
-            <script>
-            var socket = io("/${req.params.id}");
-            socket.on('connect', function () {
-                socket.emit('user',${JSON.stringify(user)});
-                socket.emit('hi');
-            });
-
-            socket.on('disconnect', function () {
-            socket.emit(${JSON.stringify(user)});
-            });
-            </script>
-            `,
-            user:user,layout:"loggedin"})
+            if(!req.err){
+                let user = await getUser(req,res);
+                let lesson = await getLesson(req.params.id);
+    
+    
+                console.log(lesson);
+                if(lesson){
+                    res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info,
+                    io:`
+                    <script>
+                    var socket = io("/${req.params.id}");
+                    socket.on('connect', function () {
+                        socket.emit('user',${JSON.stringify(user)});
+                        socket.emit('hi');
+                    });
+        
+                    socket.on('disconnect', function () {
+                    socket.emit(${JSON.stringify(user)});
+                    });
+                    </script>
+                    `,
+                    user:user,layout:"loggedin"})
+                }
+                else{
+                    let user = await getUser(req,res);
+                    res.render("pupil", {title:"Elev inloggad", erress:"<script>alertify.error('Finns inget lektion med den nyckeln');</script>",user:user,layout:"loggedin"})
+                }
+                
+            }
+            else{
+                let user = await getUser(req,res);
+                res.render("pupil", {title:"Elev inloggad", erress:"<script>alertify.error('Finns inget lektion med den nyckeln');</script>",user:user,layout:"loggedin"})
+            }
+            
         }
         catch(err){
+            let user = await getUser(req,res);
+            res.render("pupil", {title:"Elev inloggad", erress:"<script>alertify.error('Finns inget lektion med den nyckeln');</script>",user:user,layout:"loggedin"})
             console.log(err);
         }
         
