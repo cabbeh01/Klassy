@@ -86,8 +86,8 @@ body{
     color: rgb(192, 174, 82);
 }
 #user{
-    position: relative;
-    right: -240px;
+    margin-left: auto;
+    padding-right:120px;
     display: inline-flex;
     align-items: center;
 }

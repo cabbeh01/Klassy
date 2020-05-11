@@ -68,28 +68,28 @@ module.exports = async function(app,io){
                                     }
                                 }
                                 else{
-                                    res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+                                    res.render('login',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att logga in');</script>", email:req.body.email});
                                 }
                             });
                         }
                         else{
-                            res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+                            res.render('login',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att logga in');</script>", email:req.body.email});
                         }
                         
                     }
                     else{
-                        res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+                        res.render('login',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att logga in');</script>", email:req.body.email});
                     }
                 });
             }
             else{
                 //console.log(req.err);
-                res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+                res.render('login',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att logga in');</script>", email:req.body.email});
             }
             
         }
         catch(err){
-            res.render('login',{title:"Registrering", errmess:"Användare eller lösenord felaktigt", email:req.body.email});
+            res.render('login',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att logga in');</script>", email:req.body.email});
         }
         
         
@@ -122,10 +122,10 @@ module.exports = async function(app,io){
                                 mail(req.body.email,"Verify account","Var vänligen och verifiera dig!","http://localhost:2380/confirm/"+result.ops[0]._id+"/"+code);
                                 
                             });
-                            res.redirect("/login");
+                            res.render('login',{title:"Registrering avklarad", errmess:"<script>alertify.warning('Du är nu registrerad, ett mail har skickats till din inkorg. Vänligen bekräfta ditt konto!');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
                         }
                         else{
-                            res.render('register',{title:"Registrering", errmess:"Går inte registrera användaren", name: req.body.name, class: req.body.class, email: req.body.email});
+                            res.render('register',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att registrera');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
                         }
                         
                     });
@@ -134,7 +134,7 @@ module.exports = async function(app,io){
         }
         else{
             //console.log(req.err);
-            res.render('register',{title:"Registrering", errmess:"Går inte registrera användaren", name: req.body.name, class: req.body.class, email: req.body.email});
+            res.render('register',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att registrera');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
         }
         //res.send(req.body.group);
     });
@@ -151,14 +151,14 @@ module.exports = async function(app,io){
                         await app.users.updateOne({"_id":app.objID(id)},{$set:{verified:true}},function(err){
                             console.log(err);
                         });
-                        res.render("confirm",{title:"Verifierad",mess:"Du är nu verifierad och kan logga in"});
+                        res.render("index",{title:"Verifierad",mess:"<script>alertify.success('Det är nu verifierad!');</script>"});
                     }
                     else{
-                        res.render("confirm",{title:"Det gick inte att verifiera",mess:"Det gick inte att verifiera"});
+                        res.render("index",{title:"Det gick inte att verifiera",mess:"<script>alertify.error('Det gick inte att verifiera');</script>"});
                     }
                 }
                 catch{
-                    res.render("confirm",{title:"Det gick inte att verifiera",mess:"Det gick inte att verifiera"});
+                    res.render("index",{title:"Det gick inte att verifiera",mess:"<script>alertify.error('Det gick inte att verifiera');</script>"});
                 }
                 
             });
