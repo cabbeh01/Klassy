@@ -146,16 +146,22 @@ module.exports = async function(app,io){
             await app.users.findOne({"_id": app.objID(id)},async function(err,data){
                 //console.log(data);
                 try{
-                    if(data.verifyCode == req.params.code){
-                        data.verified = true;
-                        await app.users.updateOne({"_id":app.objID(id)},{$set:{verified:true}},function(err){
-                            console.log(err);
-                        });
-                        res.render("index",{title:"Verifierad",mess:"<script>alertify.success('Det är nu verifierad!');</script>"});
+                    if(!data.verified){
+                        if(data.verifyCode == req.params.code){
+                            data.verified = true;
+                            await app.users.updateOne({"_id":app.objID(id)},{$set:{verified:true}},function(err){
+                                console.log(err);
+                            });
+                            res.render("index",{title:"Verifierad",mess:"<script>alertify.success('Det är nu verifierad!');</script>"});
+                        }
+                        else{
+                            res.render("index",{title:"Det gick inte att verifiera",mess:"<script>alertify.error('Det gick inte att verifiera');</script>"});
+                        }
                     }
                     else{
-                        res.render("index",{title:"Det gick inte att verifiera",mess:"<script>alertify.error('Det gick inte att verifiera');</script>"});
+                        res.render("index",{title:"Det gick inte att verifiera",mess:"<script>alertify.warning('Du är reda verifierad!');</script>"});
                     }
+                    
                 }
                 catch{
                     res.render("index",{title:"Det gick inte att verifiera",mess:"<script>alertify.error('Det gick inte att verifiera');</script>"});
