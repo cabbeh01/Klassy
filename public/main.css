@@ -56,6 +56,9 @@ body{
     justify-content:center;
 }
 
+
+
+
 #navigation{
     position: relative;
     background-color:#303030;
@@ -77,14 +80,20 @@ body{
     font-size: 16px;
     text-align: right;
     text-decoration:none;
-    color: #E1CC67;
+    color:#e1cc67;
 }
+
+#navigation #user #logout{
+    font-size: 16px;
+    text-align: right;
+    text-decoration:none;
+    color:white;
+}
+
 #name-container{
     display: inline-block;
 }
-#navigation a:hover{
-    color: rgb(192, 174, 82);
-}
+
 #user{
     margin-left: auto;
     padding-right:120px;
@@ -141,4 +150,28 @@ table, td {
 input{
     margin-top: 10px;
     display: block;
+}
+
+#logout{
+    background-color: #e1cc67;
+    border: none;
+    color: white;
+    padding: 12px;
+    text-align: center;
+    margin-left: 10px;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 20%;
+}
+
+#logout a:hover{
+    background-color: #E16767;
+}
+
+a{
+    color: #4d4938;
+}
+
+a:hover{
+    color: #c0ae52;
 }

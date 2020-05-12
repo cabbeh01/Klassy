@@ -1,14 +1,15 @@
 <h1>Registrering</h1>
 <form action="register" method="post">
+    <div class="radiogroup">
+        <input type="radio" name="group" value="1" checked="true"><p>Elev</p>
+        <input type="radio" name="group"value="0"><p>Lärare</p>
+    </div>
     <input type="name" name="name" placeholder="För- efternamn" value={{name}}>
     <input type="class" name="class" placeholder="Klass" value={{class}}>
     <input type="email" name="email" placeholder="E-postadress" value={{email}}>
     <input type="password" name="password" placeholder="Lösenord">
     <input type="password" name="repassword" placeholder="Bekräfta Lösenordet">
-    <div class="radiogroup">
-        <input type="radio" name="group" value="1" checked="true"><p>Elev</p>
-        <input type="radio" name="group"value="0"><p>Lärare</p>
-    </div>
+    
     <input type="submit" value="Registrera dig">
 
     {{{errmess}}}

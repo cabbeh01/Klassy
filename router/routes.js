@@ -1,6 +1,4 @@
-//let objectId = require('mongodb').ObjectID;
 const jwt = require('jsonwebtoken');
-//const secret = require('./secret');
 const bcrypt = require('bcryptjs');
 const codeGen = require("../codegenerator.js");
 const mail = require("../mail.js");
@@ -172,6 +170,7 @@ module.exports = async function(app,io){
         }
         catch(err){
             //console.log(err);
+            
             res.redirect("/");
         }
     });
@@ -224,16 +223,20 @@ module.exports = async function(app,io){
             res.render("pupil", {title:"Elev inloggad", erress:"<script>alertify.error('Finns inget lektion med den nyckeln');</script>",user:user,layout:"loggedin"})
             console.log(err);
         }
-        
 
-        //user = await app.users.findOne()
-        //console.log(user);
-        
     });
 
 
-    app.post("/session",verifiedAcc,async function(req,res){
-        res.redirect("/session/" + req.body.code);
+    app.post("/session",verifiedAcc,valiInputCode,async function(req,res){
+        
+        //Kollar så att koden är giltlig annars byt params till unknown
+        //Detta gör för att inte kunna få felmeddelande så man hamnar i en annan site
+        if(!req.err){
+            res.redirect("/session/" + req.body.code);
+        }
+        else{
+            res.redirect("/session/" + "unknown");
+        }
     });
 
     
@@ -375,6 +378,18 @@ module.exports = async function(app,io){
         res.redirect("/");
     });
 
+    app.get("*", async function(req, res){
+        user = await getUser(req,res);
+        if(!user){
+            res.render('error', {title:"Fel",layout:"layout"});
+        }
+        else{
+            res.render('error', {title:"Fel",layout:"loggedin", user:user});
+        }
+        
+    });
+
+
     async function verifiedAcc(req,res,next){
         try{
             user = await getUser(req,res);
@@ -390,6 +405,12 @@ module.exports = async function(app,io){
         }
         
     }
+
+
+      
+
+        
+
 
     function auth(req,res,next){
         
