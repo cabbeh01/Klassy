@@ -6,6 +6,7 @@
     <h1>Information om lektionen</h1>
     
     <form action="/startlesson" method="post">
+        <input type="text" name="rubrik" placeholder="Rubrik" value={{rubrik}}>
         <div id="editor"></div>
         <input type="hidden" id="info" name="info" value="">
         <input type="submit" value="Starta lektion">
