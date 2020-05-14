@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cookieParser = require('cookie-parser');
-const createError = require("http-errors");
 const http = require('http').createServer(app);
 
 const io = require("socket.io")(http);
@@ -29,19 +28,6 @@ app.use("/router",express.static("router"));
 app.use("/resources",express.static("resources"));
 app.use(cookieParser());
 app.use(express.urlencoded({extended:false}));
-
-/*
-app.use(function(req,res, next){
-    next(createError(404));
-});
-
-// error handler
-app.use(function (err, req, res, next) {
-
-    // render the error page
-    res.status(err.status || 500);
-    res.render('error');
-});*/
 
 makeConnection();
 async function makeConnection(){

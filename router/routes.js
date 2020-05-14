@@ -275,6 +275,9 @@ module.exports = async function(app,io){
         res.redirect("/lesson/" + code);
     });
 
+    app.get("/test",function(req,res){
+        listLessons(req,res);
+    });
 
     app.get("/lesson/:id",verifiedAcc, async function(req,res){
         const c = req.params.id;
@@ -513,7 +516,34 @@ module.exports = async function(app,io){
         
     }
 
-    
+    async function listLessons(req,res){
+
+        let user = await getUser(req,res);
+        //console.log(user._id);
+        await app.lessons.find().toArray(function(err,data){
+            
+            //console.log(data);
+            let lessonId = data.filter(function(les){
+                
+                return user._id.toString() == les.ownerId.toString();
+            })
+            console.log(lessonId);
+            //console.log(user);            
+            
+            /*if(data == null){
+                await app.lessons.insertOne(lesson,function(err,result){
+                    if(err){
+                        console.log(err);
+                    }
+                });
+            }
+            else{
+                setLesson(req,res,codeGen(6),lesson.ownerId,lesson.bil,lesson.listUsers);
+            }*/
+            
+        });
+    }
+
     async function setLesson(req,res,code,owner,bil){
 
         var lesson = {key:code, info:req.body.info,bilagor:bil, ownerId:owner._id, listUsers:""};
