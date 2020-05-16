@@ -190,7 +190,7 @@ module.exports = async function(app,io){
     
                 console.log(lesson);
                 if(lesson){
-                    res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info,
+                    res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info, rubrik:lesson.rubrik,
                     io:`
                     <script>
                     var socket = io("/${req.params.id}");
@@ -270,7 +270,6 @@ module.exports = async function(app,io){
     app.post("/startlesson", function(req,res){
         console.log(req.body.info);
         const code = codeGen(6);
-        app.info = req.body.info;
         setLesson(req,res,code,user);
         res.redirect("/lesson/" + code);
     });
@@ -287,7 +286,8 @@ module.exports = async function(app,io){
     });
     app.get("/lesson/:id",verifiedAcc, async function(req,res){
         const c = req.params.id;
-        const lessInfo = app.info;
+        let lesson = await getLesson(c);
+        console.log(lesson);
         const socket = io.of('/' + c);
         
         socket.on('connection', function(socket){
@@ -301,7 +301,7 @@ module.exports = async function(app,io){
             //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
         });
 
-        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lessInfo})
+        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
     });
 
 
@@ -487,6 +487,7 @@ module.exports = async function(app,io){
                         resolve(decoded)
                     }
                     else{
+                        req.cookies.token = "";
                         reject(0)
                     }
                 });
@@ -537,7 +538,7 @@ module.exports = async function(app,io){
                     //console.log(lessonId);
                         
                     lessonId.forEach(less => {
-                        html += `<li>${less._id}</li>`;
+                        html += `<li><a href="/preplesson/${less._id}">${less.rubrik}</a></li>`;
                     });
                     console.log(html);
                     resolve(html);
@@ -555,12 +556,11 @@ module.exports = async function(app,io){
         
     }
 
-    async function setLesson(req,res,code,owner,bil){
+    async function setLesson(req,res,code,owner){
 
-        var lesson = {key:code, info:req.body.info,bilagor:bil, ownerId:owner._id, listUsers:""};
-        console.log(lesson);
+        let owne = owner;
         await app.lessons.findOne({"key": code},async function(err,data){
-            var lesson = {key:code, info:req.body.info, ownerId:owner._id}
+            var lesson = {key:code, info:req.body.info, ownerId:owner._id, rubrik:req.body.rubrik};
             if(data == null){
                 await app.lessons.insertOne(lesson,function(err,result){
                     if(err){
@@ -569,7 +569,7 @@ module.exports = async function(app,io){
                 });
             }
             else{
-                setLesson(req,res,codeGen(6),lesson.ownerId,lesson.bil,lesson.listUsers);
+                setLesson(req,res,codeGen(6),owne);
             }
             
         });
