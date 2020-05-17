@@ -80,6 +80,7 @@ body{
     font-size: 16px;
     text-align: right;
     text-decoration:none;
+    margin-right:10px;
     color:#e1cc67;
 }
 
@@ -156,7 +157,7 @@ input{
 #logout{
     background-color: #e1cc67;
     border: none;
-    color: white;
+    color: #303030;
     padding: 12px;
     text-align: center;
     margin-left: 10px;
@@ -175,4 +176,48 @@ a{
 
 a:hover{
     color: #c0ae52;
+}
+#lessons{
+    padding-top: 30px;
+    display: inline-block;
+}
+#lessons li{
+    text-align: right;
+    list-style-type: none;
+    margin-bottom: 30px;
+    
+}
+
+
+#lessonpack a{
+
+    border-radius: 4px;
+    margin-left: 5px;
+    border: solid 1px #b8a545;
+    background: #e1cc67;
+    color: #FFF;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #303030;
+}
+#lessonpack a:hover{
+    border: solid 1px #807025;
+    background: #c0ae52;
+}
+
+
+#lessonpack a:last-child{
+    border-radius: 4px;
+    margin-left: 20px;
+    border: solid 1px #b84545;
+    background: #e16767;
+    color: #FFF;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #303030;
+}
+
+#lessonpack a:last-child:hover{
+    border: solid 1px #802525;
+    background: #c05252;
 }

@@ -247,67 +247,101 @@ module.exports = async function(app,io){
 
     
     //Lärare
-    app.get("/teacher",verifiedAcc,auth,async function(req,res){
+    app.get("/teacher",verifiedAcc,teacherOnly,auth,async function(req,res){
         user = await getUser(req,res);
-        if(app.currentGroup == "0"){
-            res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
-        }
-        else if(app.currentGroup == "1"){
-            res.redirect("/pupil");
-        }
-        else{
-            res.redirect("/login");
-        }
+        res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
     });
 
     
     //Teacher preparing a lesson
-    app.post("/preplesson", function(req,res){
+    app.post("/preplesson",verifiedAcc,teacherOnly, function(req,res){
         res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user});
     });
     
     //Teacher starting a session
-    app.post("/startlesson", function(req,res){
+    app.post("/startlesson",verifiedAcc,teacherOnly, function(req,res){
         console.log(req.body.info);
         const code = codeGen(6);
         setLesson(req,res,code,user);
-        res.redirect("/lesson/" + code);
+        res.redirect("/teacher/lesson/" + code);
     });
 
-    app.get("/test",function(req,res){
-        listLessons(req,res);
-    });
 
-    app.get("/teacher/lessons",verifiedAcc, async function(req,res){
+    app.get("/teacher/lessons",verifiedAcc,teacherOnly, async function(req,res){
         user = await getUser(req,res);
         ls = await listLessons(req,res, user);
-        
-        res.render("lessons",{lessons:ls, title:"Lektioner ",layout:"loggedin",user:user});
+        if(ls != ``){
+            res.render("lessons",{lessons:ls, title:"Lektioner ",layout:"loggedin",user:user});
+        }
+        else{
+            res.render("lessons",{lessons:"Det finns inga lektioner", title:"Lektioner ",layout:"loggedin",user:user});
+        }
     });
-    app.get("/lesson/:id",verifiedAcc, async function(req,res){
-        const c = req.params.id;
-        let lesson = await getLesson(c);
-        console.log(lesson);
-        const socket = io.of('/' + c);
-        
-        socket.on('connection', function(socket){
+    app.get("/teacher/lesson/:id",verifiedAcc,teacherOnly, async function(req,res){
+        try{
+            const c = req.params.id;
+            let lesson = await getLesson(c);
+            console.log(lesson.info);
+            const socket = io.of('/' + c);
             
-            socket.on('user', function (usr) { 
-                console.log(usr.name + " connected on code: " + c);
+            socket.on('connection', function(socket){
+                
+                socket.on('user', function (usr) { 
+                    console.log(usr.name + " connected on code: " + c);
+                });
+                socket.on('disconnect', function (usr) { 
+                    console.log(usr.name + " disconnected from code: " + c);
+                });
+                //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
             });
-            socket.on('disconnect', function (usr) { 
-                console.log(usr.name + " disconnected from code: " + c);
-            });
-            //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
-        });
-
-        res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
+    
+            res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
+        }
+        catch(err){
+            console.log(err);
+        }
+        
     });
 
 
 
+    app.get("/teacher/removeless/:id",verifiedAcc,teacherOnly, async function(req,res){
+        try{
+            let code = req.params.id;
+        
+            let lesson = await getLesson(code);
+            res.render("removeless",{title:"Bekräfta bortagning av lektionen " + lesson.rubrik,key:code,lesson:lesson.rubrik,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
+        }
+        catch{
+            res.render("lessons", {title:"Elev inloggad", errmess:"<script>alertify.error('Det gick inte hitta lektionen');</script>",user:user,layout:"loggedin"});
+        }
 
+        
+       
+    });
 
+    app.post("/teacher/removeless/confirm",verifiedAcc,teacherOnly, async function(req,res){
+        
+       
+        let user = await getUser(req,res);
+        let lesson = await getLesson(req.body.key);
+
+        if(lesson.ownerId.toString() == user._id.toString()){
+            if(removeLesson(req.body.key)){
+                res.redirect("/teacher/lessons");
+                
+            }
+            else{
+
+                res.render("lessons", {title:"Elev inloggad", errmess:"<script>alertify.error('Det gick inte ta bort lektionen');</script>",user:user,layout:"loggedin"});
+            }
+        }
+        else{
+            res.render("lessons", {title:"Elev inloggad", errmess:"<script>alertify.error('Det gick inte ta bort lektionen');</script>",user:user,layout:"loggedin"});
+        }
+        
+        
+    });
 
 
 
@@ -398,6 +432,20 @@ module.exports = async function(app,io){
         
     });
 
+    async function teacherOnly(req,res,next){
+        try{
+            user = await getUser(req,res);
+            if(user.group == 0){
+                next();
+            }
+            else{
+                res.redirect("/pupil");
+            }
+        }
+        catch{
+            res.redirect("/");
+        }
+    }
 
     async function verifiedAcc(req,res,next){
         try{
@@ -523,6 +571,8 @@ module.exports = async function(app,io){
         
     }
 
+
+
     async function listLessons(req,res,user){
 
         try{
@@ -538,7 +588,10 @@ module.exports = async function(app,io){
                     //console.log(lessonId);
                         
                     lessonId.forEach(less => {
-                        html += `<li><a href="/preplesson/${less._id}">${less.rubrik}</a></li>`;
+                        html += `   <div id="lessonpack">
+                                    <li>${less.rubrik} <a href="/teacher/lesson/${less.key}">Visa</a><a href="/preplesson/${less.key}">Redigera</a><a href="/teacher/removeless/${less.key}">Ta bort</a></li>
+                                    </div>                    
+                                `;
                     });
                     console.log(html);
                     resolve(html);
@@ -558,21 +611,26 @@ module.exports = async function(app,io){
 
     async function setLesson(req,res,code,owner){
 
-        let owne = owner;
-        await app.lessons.findOne({"key": code},async function(err,data){
-            var lesson = {key:code, info:req.body.info, ownerId:owner._id, rubrik:req.body.rubrik};
-            if(data == null){
-                await app.lessons.insertOne(lesson,function(err,result){
-                    if(err){
-                        console.log(err);
-                    }
-                });
-            }
-            else{
-                setLesson(req,res,codeGen(6),owne);
-            }
-            
-        });
+        try{
+            let owne = owner;
+            await app.lessons.findOne({"key": code},async function(err,data){
+                var lesson = {key:code, info:req.body.info, ownerId:owner._id, rubrik:req.body.rubrik};
+                if(data == null){
+                    await app.lessons.insertOne(lesson,function(err,result){
+                        if(err){
+                            console.log(err);
+                        }
+                    });
+                }
+                else{
+                    setLesson(req,res,codeGen(6),owne);
+                }
+                
+            });
+        }
+        catch(err){
+            console.log(err);
+        }
     }
 
     function getLesson(code){
@@ -580,11 +638,15 @@ module.exports = async function(app,io){
         try{
             return new Promise(async function(resolve,reject){
                 await app.lessons.findOne({"key": code}, function(err,data){
-                    //var lesson = {key:code, info:req.body.info, ownerId:owner._id}
-                    if(err){
-                        reject(null)
+                    console.log(code);
+                    if(!err){
+                        resolve(data);
+                        
                     }
-                    resolve(data);
+                    else{
+                        reject(null);
+                    }
+                    
                 });
             });
         }
@@ -593,6 +655,26 @@ module.exports = async function(app,io){
         }
     }
     
-    
+    function removeLesson(code){
+
+        try{
+            return new Promise(async function(resolve,reject){
+                await app.lessons.deleteOne({"key": code}, function(err,data){
+                    console.log(code);
+                    if(!err){
+                        resolve(true);
+                        
+                    }
+                    else{
+                        reject(false);
+                    }
+                    
+                });
+            });
+        }
+        catch(err){
+            console.log(err);
+        }
+    }
     
 }
