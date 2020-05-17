@@ -5,11 +5,12 @@
 <div id="prepless">
     <h1>Information om lektionen</h1>
     
-    <form action="/startlesson" method="post">
-        <input type="text" name="rubrik" placeholder="Rubrik" value={{rubrik}}>
-        <div id="editor">{{info}}</div>
-        <input type="hidden" id="info" name="info" value="">
-        <input type="submit" value="Starta lektion">
+    <form action="{{action}}" method="post">
+        <input type="text" name="rubrik" placeholder="Rubrik" value="{{rubrik}}">
+        <div id="editor">{{{info}}}</div>
+        <input type="hidden" id="info" name="info" value="{{info}}">
+        <input type="hidden" id="oid" name="oid" value="{{oid}}">
+        <input type="submit" value="{{button}}">
     </form>
 </div>
 

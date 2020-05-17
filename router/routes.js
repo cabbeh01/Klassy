@@ -100,39 +100,44 @@ module.exports = async function(app,io){
     });
 
     app.post("/register",valiInputRegister,async function(req,res){
-        if(!req.err){
-            bcrypt.hash(req.body.password,12,async function(err,hash){
-                let inEmail = req.body.email;
-                
-                    await app.users.findOne({"email": inEmail},async function(err,data){
+        try{
+            if(!req.err){
+                bcrypt.hash(req.body.password,12,async function(err,hash){
+                    let inEmail = req.body.email;
                     
-                        if(data == null){
-                            
-                            req.body.password = hash;
-                            delete req.body.repassword;
-                            req.body.verified =  false;
-                            let code = codeGen(26);
-                            req.body.verifyCode = code;
-                            await app.users.insertOne(req.body,function(err,result){
-                                
-                                //console.log(err);
-                                //console.log(result.insertedId);
-                                mail(req.body.email,"Verify account","Var vänligen och verifiera dig!","http://localhost:2380/confirm/"+result.ops[0]._id+"/"+code);
-                                
-                            });
-                            res.render('login',{title:"Registrering avklarad", errmess:"<script>alertify.warning('Du är nu registrerad, ett mail har skickats till din inkorg. Vänligen bekräfta ditt konto!');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
-                        }
-                        else{
-                            res.render('register',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att registrera');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
-                        }
+                        await app.users.findOne({"email": inEmail},async function(err,data){
                         
-                    });
-            });
-
+                            if(data == null){
+                                
+                                req.body.password = hash;
+                                delete req.body.repassword;
+                                req.body.verified =  false;
+                                let code = codeGen(26);
+                                req.body.verifyCode = code;
+                                await app.users.insertOne(req.body,function(err,result){
+                                    
+                                    //console.log(err);
+                                    //console.log(result.insertedId);
+                                    mail(req.body.email,"Verify account","Var vänligen och verifiera dig!","http://localhost:2380/confirm/"+result.ops[0]._id+"/"+code);
+                                    
+                                });
+                                res.render('login',{title:"Registrering avklarad", errmess:"<script>alertify.warning('Du är nu registrerad, ett mail har skickats till din inkorg. Vänligen bekräfta ditt konto!');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
+                            }
+                            else{
+                                res.render('register',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att registrera');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
+                            }
+                            
+                        });
+                });
+    
+            }
+            else{
+                //console.log(req.err);
+                res.render('register',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att registrera');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
+            }
         }
-        else{
-            //console.log(req.err);
-            res.render('register',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att registrera');</script>", name: req.body.name, class: req.body.class, email: req.body.email});
+        catch{
+            res.redirect("/register");
         }
         //res.send(req.body.group);
     });
@@ -169,8 +174,6 @@ module.exports = async function(app,io){
             
         }
         catch(err){
-            //console.log(err);
-            
             res.redirect("/");
         }
     });
@@ -247,18 +250,36 @@ module.exports = async function(app,io){
 
     
     //Lärare
-    app.get("/teacher",verifiedAcc,teacherOnly,auth,async function(req,res){
-        user = await getUser(req,res);
+    app.get("/teacher",verifiedAcc,teacherOnly,auth, async function(req,res){
+        let user = await getUser(req,res);
         res.render("teacher",{title:"Lärare inloggad",layout:"loggedin", user:user});
     });
 
     
-    //Teacher preparing a lesson
+    //Lärare förbereder en lektion
     app.post("/preplesson",verifiedAcc,teacherOnly, function(req,res){
-        res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user});
+        res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user, action:"/startlesson",button:"Skapa lektion"});
     });
+
     
-    //Teacher starting a session
+
+    app.get("/preplesson/:id",verifiedAcc,teacherOnly, async function(req,res){
+        try{
+            code = req.params.id;
+            let lesson = await getLesson(code);
+            res.render("preplesson",{title:"Redigerar " + lesson.rubrik,rubrik:lesson.rubrik, info:lesson.info, layout:"loggedin",user:user,action:"/updatelesson", oid:lesson._id, button:"Uppdatera lektionen"});
+        }
+        catch(err){
+           //res.redirect("lessons");
+           console.log(err);
+        }
+    });
+    app.post("/updatelesson",verifiedAcc,teacherOnly, async function(req,res){
+        await updateLesson(req.body);
+        ls = await listLessons(req,res, user);
+        res.redirect("/teacher/lessons");
+    });
+    //Lärare startar en lektion
     app.post("/startlesson",verifiedAcc,teacherOnly, function(req,res){
         console.log(req.body.info);
         const code = codeGen(6);
@@ -268,13 +289,18 @@ module.exports = async function(app,io){
 
 
     app.get("/teacher/lessons",verifiedAcc,teacherOnly, async function(req,res){
-        user = await getUser(req,res);
-        ls = await listLessons(req,res, user);
-        if(ls != ``){
-            res.render("lessons",{lessons:ls, title:"Lektioner ",layout:"loggedin",user:user});
+        try{
+            user = await getUser(req,res);
+            ls = await listLessons(req,res, user);
+            if(ls != ``){
+                res.render("lessons",{lessons:ls, title:"Lektioner ",layout:"loggedin",user:user});
+            }
+            else{
+                res.render("lessons",{lessons:"Det finns inga lektioner", title:"Lektioner ",layout:"loggedin",user:user});
+            }
         }
-        else{
-            res.render("lessons",{lessons:"Det finns inga lektioner", title:"Lektioner ",layout:"loggedin",user:user});
+        catch{
+            res.redirect("/teacher");
         }
     });
     app.get("/teacher/lesson/:id",verifiedAcc,teacherOnly, async function(req,res){
@@ -298,7 +324,7 @@ module.exports = async function(app,io){
             res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
         }
         catch(err){
-            console.log(err);
+            res.redirect("/teacher");
         }
         
     });
@@ -322,23 +348,28 @@ module.exports = async function(app,io){
 
     app.post("/teacher/removeless/confirm",verifiedAcc,teacherOnly, async function(req,res){
         
-       
-        let user = await getUser(req,res);
-        let lesson = await getLesson(req.body.key);
-
-        if(lesson.ownerId.toString() == user._id.toString()){
-            if(removeLesson(req.body.key)){
-                res.redirect("/teacher/lessons");
-                
+        try{
+            let user = await getUser(req,res);
+            let lesson = await getLesson(req.body.key);
+    
+            if(lesson.ownerId.toString() == user._id.toString()){
+                if(removeLesson(req.body.key)){
+                    res.redirect("/teacher/lessons");
+                    
+                }
+                else{
+    
+                    res.render("lessons", {title:"Elev inloggad", errmess:"<script>alertify.error('Det gick inte ta bort lektionen');</script>",user:user,layout:"loggedin"});
+                }
             }
             else{
-
                 res.render("lessons", {title:"Elev inloggad", errmess:"<script>alertify.error('Det gick inte ta bort lektionen');</script>",user:user,layout:"loggedin"});
             }
         }
-        else{
-            res.render("lessons", {title:"Elev inloggad", errmess:"<script>alertify.error('Det gick inte ta bort lektionen');</script>",user:user,layout:"loggedin"});
+        catch{
+            res.redirect("/teacher");
         }
+        
         
         
     });
@@ -431,6 +462,17 @@ module.exports = async function(app,io){
         }
         
     });
+
+
+
+
+
+
+
+
+
+    // ----------   Funktioner   ------------
+
 
     async function teacherOnly(req,res,next){
         try{
@@ -626,6 +668,20 @@ module.exports = async function(app,io){
                     setLesson(req,res,codeGen(6),owne);
                 }
                 
+            });
+        }
+        catch(err){
+            console.log(err);
+        }
+    }
+
+    async function updateLesson(lesson){
+
+        try{
+            await app.lessons.updateOne({"_id":app.objID(lesson.oid)},{$set:{info:lesson.info, rubrik:lesson.rubrik}},function(err){
+                if(err){
+                    console.log(err);
+                }
             });
         }
         catch(err){

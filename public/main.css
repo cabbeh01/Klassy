@@ -84,13 +84,6 @@ body{
     color:#e1cc67;
 }
 
-#navigation #user #logout{
-    font-size: 16px;
-    text-align: right;
-    text-decoration:none;
-    color:white;
-}
-
 #name-container{
     display: inline-block;
 }
@@ -154,22 +147,6 @@ input{
     display: block;
 }
 
-#logout{
-    background-color: #e1cc67;
-    border: none;
-    color: #303030;
-    padding: 12px;
-    text-align: center;
-    margin-left: 10px;
-    display: inline-block;
-    font-size: 16px;
-    border-radius: 20%;
-}
-
-#logout a:hover{
-    background-color: #E16767;
-}
-
 a{
     color: #4d4938;
 }
@@ -189,7 +166,7 @@ a:hover{
 }
 
 
-#lessonpack a{
+#lessonpack a, #navTeacher a, a #logout, input[type=button], input[type=submit]{
 
     border-radius: 4px;
     margin-left: 5px;
@@ -200,11 +177,14 @@ a:hover{
     text-decoration: none;
     color: #303030;
 }
-#lessonpack a:hover{
+#lessonpack a:hover, #navTeacher a:hover, a#logout:hover, input[type=button]:hover, input[type=submit]:hover{
     border: solid 1px #807025;
     background: #c0ae52;
 }
 
+#navTeacher{
+    margin-bottom: 2vw;
+}
 
 #lessonpack a:last-child{
     border-radius: 4px;
@@ -220,4 +200,10 @@ a:hover{
 #lessonpack a:last-child:hover{
     border: solid 1px #802525;
     background: #c05252;
+}
+
+input[type=button], input[type=submit]{
+    height: 38px;
+    width: auto;
+    cursor: pointer;
 }
