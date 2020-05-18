@@ -420,17 +420,16 @@ module.exports = async function(app,io){
                         
                         if(users.length <= 0){
                             users.forEach(function(element){
-                                
+            
                                 if(element.status == 0 || element.userID.toString() == data.userID.toString()){
                                     us = true;
                                 }
-                                
-                               
+
                             });
 
                             if(us){
                                 users = users.filter(function(x){
-                                    return (x.userID.toString() != data.userID.toString());
+                                    return (x.userID.toString() != data.userID.toString() || element.status == 0);
                                 });
                                 
                             }else{
@@ -440,7 +439,7 @@ module.exports = async function(app,io){
                             
                         }
                         drawTable();
-                        console.log(users);
+                        
                     });
                     
                     function drawTable(){
@@ -449,7 +448,7 @@ module.exports = async function(app,io){
                         users.forEach(function(element){
                             draw += template(element.userName.toString());
                         });
-                        console.log(draw);
+                        
                         document.getElementById("list").innerHTML = draw;
                     }
                     
@@ -461,6 +460,7 @@ module.exports = async function(app,io){
                         let user = users[0];
                         users.shift();
                         socket.emit("helpdone",user);
+                        drawTable();
                     }
                 </script>
             `});
