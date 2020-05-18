@@ -190,8 +190,6 @@ module.exports = async function(app,io){
                 let user = await getUser(req,res);
                 let lesson = await getLesson(req.params.id);
     
-    
-                console.log(lesson);
                 if(lesson){
                     res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info, rubrik:lesson.rubrik,
                     io:`
@@ -201,6 +199,15 @@ module.exports = async function(app,io){
                     
                     const socket = io('/${lesson.key}');
                     
+                    socket.on('pupil', (data) => {
+                        
+                        if(data.userID == userID){
+                            document.getElementById("helpbutton").style.backgroundColor = "#e1cc67";
+                            document.getElementById("helpbutton").style.borderColor = "#b8a545";
+                            document.getElementById("helpbutton").innerHTML = "Hjälp";
+                            want = 0;
+                        }
+                    });
 
                     let want = 0;
                     function help(){
@@ -211,14 +218,15 @@ module.exports = async function(app,io){
                             want = 0;
                         }
                         else{
+                            console.log("Jag behöver hjälp");
                             document.getElementById("helpbutton").style.backgroundColor = "#e16767";
                             document.getElementById("helpbutton").style.borderColor = "#b84545";
                             document.getElementById("helpbutton").innerHTML = "Avbryt";
                             want = 1
                         }
                         
-                        socket.emit("test",{userID,userName,status:want});
-                        console.log("hjälp behöver jag");
+                        socket.emit("pupilchange",{userID,userName,status:want});
+                        console.log(want);
                     }
                     </script>
                     `,
@@ -328,13 +336,71 @@ module.exports = async function(app,io){
             const lesNet = io.of('/'+c);
             lesNet.on('connection', function(socket){
                 
-                socket.on('test', function(data){
-                    console.log(data);
+                socket.on('pupilchange', function(data){
+                    lesNet.emit('teacher', data);
+                });
+                socket.on('helpdone', function(data){
+                    lesNet.emit('pupil', data);
                 });
             });
             
     
-            res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
+            res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik,
+            io:`
+                <script>
+                    let users = [];
+                    
+                    const socket = io('/${lesson.key}');
+                    let us = false;
+                    socket.on('teacher', (data) => {
+                        
+                        if(users.length <= 0){
+                            users.forEach(function(element){
+                                if(element.userID.toString() == data.userID.toString()){
+                                    us = true;
+                                }
+                                else{
+                                    if(element.status == 0){
+                                        us = true;
+                                    }
+                                }
+                            });
+                            if(us){
+                                users = users.filter(function(x){
+                                    return (x.userID.toString() != data.userID.toString());
+                                });
+                                
+                            }else{
+
+                                users.push(data);
+                            }
+                            us = false;
+                            
+                        }
+                        drawTable();
+                        console.log(users);
+                    });
+                    
+                    function drawTable(){
+                        let draw = "";
+                        
+                        let fullhtml = users.forEach(function(element){
+                            draw += template(element.userName);
+                        });
+                        document.getElementById("list").innerHTML = fullhtml;
+                    }
+                    
+                    function template(name){
+                        return "<li>"+ name +"</li>";
+                    }
+
+                    function lost(){
+                        let user = users[0];
+                        users.shift();
+                        socket.emit("helpdone",user);
+                    }
+                </script>
+            `});
         }
         catch(err){
             res.redirect("/teacher");
@@ -387,70 +453,6 @@ module.exports = async function(app,io){
         
     });
 
-
-
-
-    io.on('connection', (socket) => {
-
-        console.log(socket.id + ' uppkopplad mot servern')
-        socket.room = 'default';
-        socket.join('default')
-        socket.isOwner = false;
-    
-        //---------------------------------Läraren skapar sina rum här---------------------------------
-        socket.on('create_room', (data) => {
-            try {
-                
-            }
-            catch (error) {
-                
-            }
-    
-        })
-
-        socket.on('test', (data) => {
-            try {
-                console.log(data);
-            }
-            catch (error) {
-                
-            }
-    
-        })
-    
-        //---------------------------------Eleverna joinar dem här---------------------------------
-        socket.on('join_room', (data) => {
-            try {
-                
-    
-            }
-            catch (error) {
-                console.error(error);
-                socket.emit('client_error', "Kunde inte joina rummet.");
-            }
-        })
-        //---------------------------------Lämna rummet---------------------------------
-        socket.on('left_room', (data) => {
-            try {
-                
-            }
-            catch (error) {
-               
-            }
-        })
-       
-    
-        //---------------------------------Stänger webbläsaren---------------------------------
-        socket.on('disconnect', function () {
-            try {
-                console.log(socket.id + ' disconnectar från servern')
-            }
-            catch (error) {
-                console.error(error);
-            }
-
-        });
-    })
 
 
 
