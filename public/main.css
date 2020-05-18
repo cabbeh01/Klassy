@@ -17,12 +17,17 @@ body{
     margin-right: auto;
 }
 
-
+#indextext{
+    margin-left: 10vw;
+    margin-right: 10vw;
+}
 
 #mid{
     text-align: center;
     width: 60vw;
-    height: 80vw;
+    min-height: 60vh;
+    height: 100%;
+    padding:3vw;
     background-color: white;
     color: #E16767;
 }
@@ -113,6 +118,8 @@ table {
     border-collapse: collapse;
     empty-cells: hide;
     width: 100%;
+    height:50%;
+
 }
   
 td{
@@ -120,6 +127,7 @@ td{
 }
 table, td {
     border: 1px solid black;
+    vertical-align: top
 }
 #key{
     height: 90px;
@@ -159,14 +167,19 @@ a:hover{
     display: inline-block;
 }
 #lessons li{
-    text-align: right;
-    list-style-type: none;
     margin-bottom: 30px;
-    
+    text-align: right;
 }
 
+.element li, #lessons li{
+    list-style-type: none;
+}
 
-#lessonpack a, #navTeacher a, a #logout, input[type=button], input[type=submit]{
+.element li{
+    text-align: left;
+}
+
+#lessonpack a, #navTeacher a, a#logout, input[type=button], input[type=submit], button{
 
     border-radius: 4px;
     margin-left: 5px;
@@ -177,7 +190,7 @@ a:hover{
     text-decoration: none;
     color: #303030;
 }
-#lessonpack a:hover, #navTeacher a:hover, a#logout:hover, input[type=button]:hover, input[type=submit]:hover{
+#lessonpack a:hover, #navTeacher a:hover, a#logout:hover, input[type=button]:hover, input[type=submit]:hover,button:hover{
     border: solid 1px #807025;
     background: #c0ae52;
 }
@@ -207,3 +220,4 @@ input[type=button], input[type=submit]{
     width: auto;
     cursor: pointer;
 }
+

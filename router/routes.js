@@ -196,15 +196,30 @@ module.exports = async function(app,io){
                     res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info, rubrik:lesson.rubrik,
                     io:`
                     <script>
-                    var socket = io("/${req.params.id}");
-                    socket.on('connect', function () {
-                        socket.emit('user',${JSON.stringify(user)});
-                        socket.emit('hi');
-                    });
-        
-                    socket.on('disconnect', function () {
-                    socket.emit(${JSON.stringify(user)});
-                    });
+                    let userID = "${user._id}";
+                    let userName = "${user.name}";
+                    
+                    const socket = io('/${lesson.key}');
+                    
+
+                    let want = 0;
+                    function help(){
+                        if(want == 1){
+                            document.getElementById("helpbutton").style.backgroundColor = "#e1cc67";
+                            document.getElementById("helpbutton").style.borderColor = "#b8a545";
+                            document.getElementById("helpbutton").innerHTML = "Hjälp";
+                            want = 0;
+                        }
+                        else{
+                            document.getElementById("helpbutton").style.backgroundColor = "#e16767";
+                            document.getElementById("helpbutton").style.borderColor = "#b84545";
+                            document.getElementById("helpbutton").innerHTML = "Avbryt";
+                            want = 1
+                        }
+                        
+                        socket.emit("test",{userID,userName,status:want});
+                        console.log("hjälp behöver jag");
+                    }
                     </script>
                     `,
                     user:user,layout:"loggedin"})
@@ -308,18 +323,16 @@ module.exports = async function(app,io){
             const c = req.params.id;
             let lesson = await getLesson(c);
             console.log(lesson.info);
-            const socket = io.of('/' + c);
             
-            socket.on('connection', function(socket){
+            
+            const lesNet = io.of('/'+c);
+            lesNet.on('connection', function(socket){
                 
-                socket.on('user', function (usr) { 
-                    console.log(usr.name + " connected on code: " + c);
+                socket.on('test', function(data){
+                    console.log(data);
                 });
-                socket.on('disconnect', function (usr) { 
-                    console.log(usr.name + " disconnected from code: " + c);
-                });
-                //res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user})
             });
+            
     
             res.render("lesson",{title:"Lektion: " + c,code:c,layout:"loggedin",user:user, lessinf:lesson.info, rubrik:lesson.rubrik});
         }
@@ -388,6 +401,16 @@ module.exports = async function(app,io){
         socket.on('create_room', (data) => {
             try {
                 
+            }
+            catch (error) {
+                
+            }
+    
+        })
+
+        socket.on('test', (data) => {
+            try {
+                console.log(data);
             }
             catch (error) {
                 
@@ -584,6 +607,8 @@ module.exports = async function(app,io){
             });
         }
         catch(err){
+            req.cookies.token = "";
+            res.redirect("/");
             console.log(err);
         }
         
