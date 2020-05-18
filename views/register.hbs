@@ -17,12 +17,14 @@
 </form>
 
 <script>
+    //Layouten i registreringen anpassas beroende på vilken typ av konto det är
     function ChangeUserReg(a){
-        console.log(a.value);
+        //Är det ett lärarkonto
         if(a.value == 0){
             document.getElementById("class").style.display = "none";
             document.getElementById("class").value = "Lärare";
         }
+        //Är det ett elevkonto
         else{
             document.getElementById("class").style.display = "block";
             document.getElementById("class").value = "";
