@@ -20,3 +20,4 @@ module.exports = function(antal){
     //Returnerar koden
     return i;
 }
+

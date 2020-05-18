@@ -384,6 +384,12 @@ module.exports = async function(app,io){
             res.redirect("/teacher");
         }
     });
+
+
+
+
+
+
     app.get("/teacher/lesson/:id",verifiedAcc,teacherOnly, async function(req,res){
         try{
             const c = req.params.id;
@@ -414,22 +420,20 @@ module.exports = async function(app,io){
                         
                         if(users.length <= 0){
                             users.forEach(function(element){
-                                if(element.userID.toString() == data.userID.toString()){
+                                
+                                if(element.status == 0 || element.userID.toString() == data.userID.toString()){
                                     us = true;
                                 }
-                                else{
-                                    if(element.status == 0){
-                                        us = true;
-                                    }
-                                }
+                                
+                               
                             });
+
                             if(us){
                                 users = users.filter(function(x){
                                     return (x.userID.toString() != data.userID.toString());
                                 });
                                 
                             }else{
-
                                 users.push(data);
                             }
                             us = false;
@@ -442,10 +446,11 @@ module.exports = async function(app,io){
                     function drawTable(){
                         let draw = "";
                         
-                        let fullhtml = users.forEach(function(element){
-                            draw += template(element.userName);
+                        users.forEach(function(element){
+                            draw += template(element.userName.toString());
                         });
-                        document.getElementById("list").innerHTML = fullhtml;
+                        console.log(draw);
+                        document.getElementById("list").innerHTML = draw;
                     }
                     
                     function template(name){
