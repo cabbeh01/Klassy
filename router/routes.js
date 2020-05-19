@@ -5,6 +5,7 @@ const mail = require("../mail.js");
 const valiInputLogin = require("../validationLogin.js");
 const valiInputRegister = require("../validationRegister.js");
 const valiInputCode = require("../validationCode.js");
+const valiInputRubrik = require("../validationRubrik.js")
 
 module.exports = async function(app,io){
     
@@ -23,7 +24,6 @@ module.exports = async function(app,io){
             }
         }
         catch(err){
-            console.log(err);
             res.render('index',{title:"Home"});
         }
         
@@ -65,6 +65,10 @@ module.exports = async function(app,io){
                                     //logga in igen. Detta har jag löst med att använda JWT (Json Web Token) detta bibliotek gör att
                                     //man kan lagra information krypterat. Samt sätta en ålder på det
                                     const token = jwt.sign(data,process.env.PRIVATEKEY,{expiresIn:"1 day"});
+
+                                    //Skapar en cookie som heter token och lägger in den krypterade informationen i kakan med en maxålder.
+                                    //httponly gör att kakan endast kan kommas åt från servern och inte från separata scripts från clienten
+                                    //sameSite gör att kakan begränsas till samma domän som man är på
                                     res.cookie("token",token,{httpOnly:true, maxAge:(2 * 24 * 60 * 60 * 1000),sameSite: 'strict'});
             
                                     //Beroende på vilken behörighetsgrupp man tillhör så redirectar man till olika saker
@@ -94,7 +98,6 @@ module.exports = async function(app,io){
                 });
             }
             else{
-                //console.log(req.err);
                 res.render('login',{title:"Registrering", errmess:"<script>alertify.error('Det går inte att logga in');</script>", email:req.body.email});
             }
             
@@ -208,7 +211,7 @@ module.exports = async function(app,io){
 
                             //Uppdaterar användaren på databasen
                             await app.users.updateOne({"_id":app.objID(id)},{$set:{verified:true}},function(err){
-                                console.log(err);
+                                
                             });
 
                             //Meddelar användaren att hen är veriferad
@@ -236,28 +239,66 @@ module.exports = async function(app,io){
         }
     });
     
-    //Sessions
+
+
+
+    //Elevens start route när hen är inloggad
+    app.get("/pupil",verifiedAcc,auth,async function(req,res){
+        
+        //Hämtar information om användaren
+        user = await getUser(req,res);
+
+        //Är användaren en elev
+        if(app.currentGroup == "1"){
+            //Renderar vi vyn för eleven
+            res.render("pupil",{title:"Elev inloggad",layout:"loggedin",user:user});
+        }
+        //Om inte och istället är en lärare skickar vi
+        //användaren dit
+        else if(app.currentGroup == "0"){
+            res.redirect("/teacher");
+        }
+        //Inget av dem så skickar vi användaren till loginsidan
+        else{
+            res.redirect("/login");
+        }
+    });
+
+    //Session för eleverna som ska koppla upp sig mot en lektion
+    //I detta fallet kan inte en elev koppla upp sig då hen sakar en sessions id
+    //Därför redirectar jag eleven till startsidan
     app.get("/session",verifiedAcc,function(req,res){
         res.redirect("/");
     });
 
-    //Pupil or guest connecting to a session
+    //Elever kopplar upp sig mot en lektion med en specifik nyckel
     app.get("/session/:id",verifiedAcc,valiInputCode,async function(req,res){
         try{
+            //Har ett problem inte uppstått annars skrivs felen ut
             if(!req.err){
+
+                //Hämtar information om användaren i detta fallet eleven
                 let user = await getUser(req,res);
+
+                //Hämtar information om lektionen. som t.ex. info, rubrik, bilagor
                 let lesson = await getLesson(req.params.id);
     
+                //Finns lektionen så ska den renderas ut för användaren
                 if(lesson){
                     res.render("session",{title:"Elev inloggad | "+ req.params.id, code:req.params.id, info:lesson.info, rubrik:lesson.rubrik,
+                    
+                    //När htmlkoden renderas ut skickar jag även med klientkod så att jag kan få socket.io fungera
                     io:`
                     <script>
-                    let userID = "${user._id}";
-                    let userName = "${user.name}";
+                    let userID = "${user._id}";                     //Lagrar användarID i en variable
+                    let userName = "${user.name}";                  //Lagrar användarNamnet i en variabel 
                     
-                    const socket = io('/${lesson.key}');
+                    const socket = io('/${lesson.key}');            //Sätter upp en session som ligger i en sessionsroute som 
+                                                                    //består av /(koden)
                     
-                    socket.on('pupil', (data) => {
+                    socket.on('pupil', (data) => {                  //Vid paketmottagning vid namnet pupil ska datan kontrolleras
+                                                                    //Är där data ska den kontrollera så att användareID == användarensID
+                                                                    //Stämmer det ska layouten för användaren resettas till att den behöver hjälp
                         if(data){
                             if(data.userID == userID){
                                 document.getElementById("helpbutton").style.backgroundColor = "#e1cc67";
@@ -268,7 +309,12 @@ module.exports = async function(app,io){
                         }
                     });
 
+                    //Variabel som indikerar att eleven behöver hjälp
                     let want = 0;
+
+                    //Om användaren behöver hjälp ändras knappen beroende på vilken status
+                    //want varibeln har
+
                     function help(){
                         if(want == 1){
                             document.getElementById("helpbutton").style.backgroundColor = "#e1cc67";
@@ -284,6 +330,9 @@ module.exports = async function(app,io){
                             want = 1
                         }
                         
+
+                        //Sedan skickas statusen till pupilchange och där lärarens client lyssnar på detta och hanterar
+                        //situationen där ifrån
                         socket.emit("pupilchange",{userID,userName,status:want});
                         console.log(want);
                     }
@@ -306,7 +355,7 @@ module.exports = async function(app,io){
         catch(err){
             let user = await getUser(req,res);
             res.render("pupil", {title:"Elev inloggad", erress:"<script>alertify.error('Finns inget lektion med den nyckeln');</script>",user:user,layout:"loggedin"})
-            console.log(err);
+            
         }
 
     });
@@ -339,7 +388,8 @@ module.exports = async function(app,io){
 
     
     //Lärare förbereder en lektion
-    app.post("/preplesson",verifiedAcc,teacherOnly, function(req,res){
+    app.post("/preplesson",verifiedAcc,valiInputRubrik,teacherOnly, function(req,res){
+       
         res.render("preplesson",{title:"Lektion: ",layout:"loggedin",user:user, action:"/startlesson",button:"Skapa lektion"});
     });
 
@@ -352,28 +402,26 @@ module.exports = async function(app,io){
             res.render("preplesson",{title:"Redigerar " + lesson.rubrik,rubrik:lesson.rubrik, info:lesson.info, layout:"loggedin",user:user,action:"/updatelesson", oid:lesson._id, button:"Uppdatera lektionen"});
         }
         catch(err){
-           //res.redirect("lessons");
-           console.log(err);
+           res.redirect("lessons");
         }
     });
-    app.post("/updatelesson",verifiedAcc,teacherOnly, async function(req,res){
+    app.post("/updatelesson",verifiedAcc,valiInputRubrik,teacherOnly, async function(req,res){
         await updateLesson(req.body);
-        ls = await listLessons(req,res, user);
+        ls = await listLessons(user);
         res.redirect("/teacher/lessons");
     });
     //Lärare startar en lektion
     app.post("/startlesson",verifiedAcc,teacherOnly, function(req,res){
-        console.log(req.body.info);
         const code = codeGen(6);
         setLesson(req,res,code,user);
         res.redirect("/teacher/lesson/" + code);
     });
 
 
-    app.get("/teacher/lessons",verifiedAcc,teacherOnly, async function(req,res){
+    app.get("/teacher/lessons",verifiedAcc,valiInputRubrik,teacherOnly, async function(req,res){
         try{
             user = await getUser(req,res);
-            ls = await listLessons(req,res, user);
+            ls = await listLessons(user);
             if(ls != ``){
                 res.render("lessons",{lessons:ls, title:"Lektioner ",layout:"loggedin",user:user});
             }
@@ -395,7 +443,6 @@ module.exports = async function(app,io){
         try{
             const c = req.params.id;
             let lesson = await getLesson(c);
-            console.log(lesson.info);
             
             
             const lesNet = io.of('/'+c);
@@ -516,19 +563,8 @@ module.exports = async function(app,io){
 
 
 
-    //Elev
-    app.get("/pupil",verifiedAcc,auth,async function(req,res){
-        user = await getUser(req,res);
-        if(app.currentGroup == "1"){
-            res.render("pupil",{title:"Elev inloggad",layout:"loggedin",user:user});
-        }
-        else if(app.currentGroup == "0"){
-            res.redirect("/teacher");
-        }
-        else{
-            res.redirect("/login");
-        }
-    });
+
+
 
     //Logout
     app.get("/logout",function(req,res){
@@ -581,11 +617,18 @@ module.exports = async function(app,io){
 
     async function verifiedAcc(req,res,next){
         try{
+            //Hämtar information om anvädnaren
             user = await getUser(req,res);
+
+            //Är användaren inte verifierad så skickas användaren till loginsidan 
+            //och ett felmeddelande kommer upp att användaren måste verifiera sig
+            //och kolla i sin inkorg
             if(!user.verified){
-                res.render('login',{title:"Ej verifierad", errmess:"Du måste verifiera ditt konto vänligen kolla din inkorg"});
+                res.render('login',{title:"Ej verifierad", 
+                errmess:"Du måste verifiera ditt konto vänligen kolla din inkorg"});
             }
             else{
+                //annars skickas vi vidare till nästa middleware eller till routen
                 next();
             }
         }
@@ -600,20 +643,30 @@ module.exports = async function(app,io){
 
         
 
-
+    //Denna funktion kontrollerar så att tokenen är rätt och giltlig
     function auth(req,res,next){
         
         try{
+            //Token hämtas från kakorna
             let token = req.cookies.token;
         
+            //Är den giltlig
             if(!(token === undefined)){
+                //Verifierar token med hjälp av JWT.verify och den 
+                //hemliga nyckel som ligger i miljövariablarna
                 jwt.verify(token,process.env.PRIVATEKEY, async function(err,decoded){
+
+                    //Går den att decoda så letar vi upp mailen i mongoDB databasen
                     if(decoded !== undefined){
                         await app.users.findOne({"email": decoded.email},function(err,data){
-                            
+                            //Finns mailen där jämförs de två hasherna och stämmer
+                            //de överens skickas användaren vidare till nästa middleware
+                            // eller skickas vidare till routen
                             if(!(data == null)){
-                                //console.log(data.group);
+                                
+                                //kontrollerar så att hasherna stämmer överens med varandra
                                 if(data.password == decoded.password){
+                                    //Sätter gruppen till rätt användarbehörighet
                                     app.currentGroup = data.group;
                                     next();
                                 }
@@ -628,13 +681,17 @@ module.exports = async function(app,io){
                 });
             }
             else{
+                //Om det token skulle gått ut eller den inte stämmer med signeringen
+                //kommer den att nollställas
                 res.clearCookie("token");
                 app.currentGroup = undefined;
                 next();
             }
         }
         catch(err){
-            console.log(err);
+            res.clearCookie("token");
+            app.currentGroup = undefined;
+            next();
         }
         
         
@@ -662,7 +719,7 @@ module.exports = async function(app,io){
         }
     }
 
-
+    //Funktion som endast verifierar token
     function verifyToken(req,res){
         try{
             return new Promise(function(resolve,reject){
@@ -686,7 +743,7 @@ module.exports = async function(app,io){
         
     }
 
-
+    //Hämtar användare som är inloggad
     async function getUser(req,res){
 
         try{
@@ -712,7 +769,7 @@ module.exports = async function(app,io){
 
 
 
-    async function listLessons(req,res,user){
+    async function listLessons(user){
 
         try{
             //console.log(user._id);
@@ -732,7 +789,7 @@ module.exports = async function(app,io){
                                     </div>                    
                                 `;
                     });
-                    console.log(html);
+                    
                     resolve(html);
                     if(err){
                         reject(null);
@@ -743,7 +800,7 @@ module.exports = async function(app,io){
             });
         }
         catch(err){
-            console.log(err);
+            reject(null);
         }
         
     }
@@ -791,7 +848,7 @@ module.exports = async function(app,io){
         try{
             return new Promise(async function(resolve,reject){
                 await app.lessons.findOne({"key": code}, function(err,data){
-                    console.log(code);
+                    
                     if(!err){
                         resolve(data);
                         
@@ -813,7 +870,7 @@ module.exports = async function(app,io){
         try{
             return new Promise(async function(resolve,reject){
                 await app.lessons.deleteOne({"key": code}, function(err,data){
-                    console.log(code);
+                   
                     if(!err){
                         resolve(true);
                         
