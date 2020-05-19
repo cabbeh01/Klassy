@@ -258,12 +258,13 @@ module.exports = async function(app,io){
                     const socket = io('/${lesson.key}');
                     
                     socket.on('pupil', (data) => {
-                        
-                        if(data.userID == userID){
-                            document.getElementById("helpbutton").style.backgroundColor = "#e1cc67";
-                            document.getElementById("helpbutton").style.borderColor = "#b8a545";
-                            document.getElementById("helpbutton").innerHTML = "Hjälp";
-                            want = 0;
+                        if(data){
+                            if(data.userID == userID){
+                                document.getElementById("helpbutton").style.backgroundColor = "#e1cc67";
+                                document.getElementById("helpbutton").style.borderColor = "#b8a545";
+                                document.getElementById("helpbutton").innerHTML = "Hjälp";
+                                want = 0;
+                            }
                         }
                     });
 
@@ -415,29 +416,24 @@ module.exports = async function(app,io){
                     let users = [];
                     
                     const socket = io('/${lesson.key}');
-                    let us = false;
+                    
                     socket.on('teacher', (data) => {
-                        
-                        if(users.length <= 0){
-                            users.forEach(function(element){
-            
-                                if(element.status == 0 || element.userID.toString() == data.userID.toString()){
-                                    us = true;
-                                }
-
-                            });
-
-                            if(us){
-                                users = users.filter(function(x){
-                                    return (x.userID.toString() != data.userID.toString() || element.status == 0);
-                                });
-                                
-                            }else{
-                                users.push(data);
-                            }
-                            us = false;
-                            
+                        if(data.status != 0){
+                            users.push(data);
                         }
+                        console.log(users);
+                        users = users.filter(function(x){
+
+                            if(x.userID.toString() == data.userID.toString()){
+                                
+                                if(data.status == 0){
+                                    return false;
+                                }
+                                
+                            }
+                            return true;
+                        });
+
                         drawTable();
                         
                     });
@@ -446,6 +442,7 @@ module.exports = async function(app,io){
                         let draw = "";
                         
                         users.forEach(function(element){
+                            console.log(element);
                             draw += template(element.userName.toString());
                         });
                         
